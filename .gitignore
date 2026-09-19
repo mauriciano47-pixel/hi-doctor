@@ -30,3 +30,6 @@ dist-ssr
 .env.local
 .env.*.local
 
+
+# V-GUARD Auto-Hardening
+scratch/
