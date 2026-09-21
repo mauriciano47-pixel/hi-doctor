@@ -1,41 +1,67 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 
 const COLORS = {
-  cream: '#FFF7F0', sage: '#E07A5F', sageLight: '#F0B8A8', sageDark: '#C4624A',
-  terracotta: '#F2A65A', terracottaDark: '#D88C3D', ink: '#2D2926', inkLight: '#8A7F77',
-  border: '#F0E4DA', white: '#FFFFFF', alert: '#D95550', alertBg: '#FDE8E7',
+  cream: '#FFF7F0',
+  sage: '#E07A5F',
+  sageLight: '#F0B8A8',
+  sageDark: '#C4624A',
+  terracotta: '#F2A65A',
+  terracottaDark: '#D88C3D',
+  ink: '#2D2926',
+  inkLight: '#8A7F77',
+  border: '#F0E4DA',
+  white: '#FFFFFF',
+  alert: '#D95550',
+  alertBg: '#FDE8E7',
+  emerald: '#2A9D8F',
+  emeraldLight: '#E8F5F3',
 };
 
-const SYMPTOM_OPTIONS = ['Fiebre', 'Tos', 'Vómito', 'Diarrea', 'Dolor de panza', 'Dolor de cabeza',
+const SYMPTOM_OPTIONS = [
+  'Fiebre', 'Tos', 'Vómito', 'Diarrea', 'Dolor de panza', 'Dolor de cabeza',
   'Dolor de garganta', 'Erupción en la piel', 'Congestión nasal', 'Decaimiento',
-  'Pérdida de apetito', 'Dolor de oído', 'Llanto inusual', 'Dificultad para dormir', 'Otro'];
+  'Pérdida de apetito', 'Dolor de oído', 'Llanto inusual', 'Dificultad para dormir', 'Otro'
+];
 
 const UNIT_OPTIONS = ['ml', 'mg', 'gotas', 'cucharadita', 'cucharada', 'comprimido', 'sobre'];
 
 const GUIA_EDUCATIVA = [
-  { titulo: 'Busca atención médica urgente si el niño presenta:', nivel: 'alerta', items: [
-    'Dificultad para respirar, respiración muy rápida o silbante',
-    'Labios o cara con color azulado o grisáceo',
-    'Fiebre en un bebé menor de 3 meses (cualquier temperatura sobre 38°C)',
-    'Fiebre muy alta (40°C o más) que no baja con medicación',
-    'Letargo extremo, dificultad para despertar o falta de respuesta',
-    'Rigidez de cuello, manchas en la piel que no desaparecen al presionar',
-    'Vómitos o diarrea con signos de deshidratación (boca seca, sin lágrimas, orina muy escasa)',
-    'Convulsiones', 'Dolor abdominal intenso y persistente',
-    'Erupción que se extiende rápido junto con fiebre',
-  ]},
-  { titulo: 'Puedes observar en casa, pero consulta si no mejora, cuando el niño presenta:', nivel: 'observar', items: [
-    'Fiebre leve o moderada en un niño que sigue jugando, comiendo y reactivo',
-    'Tos o congestión nasal sin dificultad para respirar',
-    'Vómito o diarrea aislados, sin signos de deshidratación',
-    'Síntomas leves que duran menos de 2-3 días sin empeorar',
-    'Erupciones leves y localizadas sin fiebre alta asociada',
-  ]},
-  { titulo: 'Como referencia general (esto no sustituye la evaluación de un profesional):', nivel: 'info', items: [
-    'Anota cuánto dura cada síntoma, no solo si aparece',
-    'Lleva el registro de temperatura y medicación a la consulta médica',
-    'Si tienes dudas, siempre es válido llamar o consultar a tu pediatra',
-  ]},
+  {
+    titulo: 'Busca atención médica urgente si el niño presenta:',
+    nivel: 'alerta',
+    items: [
+      'Dificultad para respirar, respiración muy rápida o silbante',
+      'Labios o cara con color azulado o grisáceo',
+      'Fiebre en un bebé menor de 3 meses (cualquier temperatura sobre 38°C)',
+      'Fiebre muy alta (40°C o más) que no baja con medicación',
+      'Letargo extremo, dificultad para despertar o falta de respuesta',
+      'Rigidez de cuello, manchas en la piel que no desaparecen al presionar',
+      'Vómitos o diarrea con signos de deshidratación (boca seca, sin lágrimas, orina muy escasa)',
+      'Convulsiones',
+      'Dolor abdominal intenso y persistente',
+      'Erupción que se extiende rápido junto con fiebre',
+    ]
+  },
+  {
+    titulo: 'Puedes observar en casa, pero consulta si no mejora, cuando el niño presenta:',
+    nivel: 'observar',
+    items: [
+      'Fiebre leve o moderada en un niño que sigue jugando, comiendo y reactivo',
+      'Tos o congestión nasal sin dificultad para respirar',
+      'Vómito o diarrea aislados, sin signos de deshidratación',
+      'Síntomas leves que duran menos de 2-3 días sin empeorar',
+      'Erupciones leves y localizadas sin fiebre alta asociada',
+    ]
+  },
+  {
+    titulo: 'Como referencia general (esto no sustituye la evaluación de un profesional):',
+    nivel: 'info',
+    items: [
+      'Anota cuánto dura cada síntoma, no solo si aparece',
+      'Lleva el registro de temperatura y medicación a la consulta médica',
+      'Si tienes dudas, siempre es válido llamar o consultar a tu pediatra',
+    ]
+  },
 ];
 
 const NUMEROS_EMERGENCIA = {
@@ -97,6 +123,74 @@ const TIPOS_LUGAR = {
   doctors: '👨‍⚕️ Consultorio',
 };
 
+// Datos clínicos iniciales de demostración para evaluación inmediata en Vitrina
+const DEMO_PACIENTE_ID = 'paciente-demo-sofia';
+const DEMO_DATA = {
+  perfiles: [
+    { id: DEMO_PACIENTE_ID, nombre: 'Sofía (3 años)', creado: new Date(Date.now() - 86400000 * 2).toISOString(), pesoKg: 14 }
+  ],
+  registros: [
+    {
+      id: 'reg-demo-1',
+      perfilId: DEMO_PACIENTE_ID,
+      fecha: new Date(Date.now() - 1000 * 60 * 60 * 22).toISOString(),
+      sintomas: ['Congestión nasal', 'Decaimiento'],
+      fiebre: true,
+      temperatura: '37.8',
+      nota: 'Comenzó con moquitos y decaimiento leve por la tarde.',
+      foto: null,
+      medicamento: null,
+    },
+    {
+      id: 'reg-demo-2',
+      perfilId: DEMO_PACIENTE_ID,
+      fecha: new Date(Date.now() - 1000 * 60 * 60 * 13).toISOString(),
+      sintomas: ['Fiebre', 'Tos', 'Pérdida de apetito'],
+      fiebre: true,
+      temperatura: '38.6',
+      nota: 'Temperatura elevada en la noche. Se administró antipirético según indicación.',
+      foto: null,
+      medicamento: {
+        nombre: 'Paracetamol Jarabe (120 mg/5 ml)',
+        dosis: '8.7',
+        unidad: 'ml',
+        intervaloHoras: 8,
+        ultimaHora: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString(),
+      },
+    },
+    {
+      id: 'reg-demo-3',
+      perfilId: DEMO_PACIENTE_ID,
+      fecha: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(),
+      sintomas: ['Fiebre', 'Tos'],
+      fiebre: true,
+      temperatura: '38.1',
+      nota: 'Fiebre cediendo con hidratación y ropa ligera. Sigue con tos.',
+      foto: null,
+      medicamento: null,
+    },
+  ],
+  contactos: [
+    {
+      id: 'c-demo-1',
+      tipo: 'pediatra',
+      nombre: 'Dra. Francisca Morales (Pediatra)',
+      telefono: '+56 9 8765 4321',
+      direccion: 'Centro Médico Infantil, Consulta 402',
+      nota: 'Atiende lunes a viernes 09:00 a 17:00',
+    },
+    {
+      id: 'c-demo-2',
+      tipo: 'hospital',
+      nombre: 'Urgencia Pediátrica Clínica Santa María',
+      telefono: '+56 2 2913 0000',
+      direccion: 'Av. Santa María 0500, Providencia',
+      nota: 'Servicio de urgencia pediátrica 24/7',
+    },
+  ],
+  pais: 'Chile',
+};
+
 function calcularDistancia(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -108,27 +202,32 @@ function calcularDistancia(lat1, lon1, lat2, lon2) {
 }
 
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+
 const formatFecha = (iso) => {
   const d = new Date(iso);
   return d.toLocaleDateString('es-CL', { day: '2-digit', month: 'short' }) + ' ' +
     d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
 };
+
 const formatFechaCorta = (iso) => new Date(iso).toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit' });
 
 function calcularProximaDosis(med) {
-  if (!med.ultimaHora || !med.intervaloHoras) return null;
+  if (!med || !med.ultimaHora || !med.intervaloHoras) return null;
   return new Date(new Date(med.ultimaHora).getTime() + med.intervaloHoras * 60 * 60 * 1000);
 }
 
 function detectarPatrones(registros) {
   const patrones = [];
-  if (registros.length === 0) return patrones;
+  if (!registros || registros.length === 0) return patrones;
+
   const fiebresNocturnas = registros.filter(r => {
     if (!r.fiebre) return false;
     const h = new Date(r.fecha).getHours();
     return h >= 20 || h < 6;
   });
-  if (fiebresNocturnas.length >= 2) patrones.push({ tipo: 'fiebre_nocturna', texto: `Fiebre nocturna registrada ${fiebresNocturnas.length} veces` });
+  if (fiebresNocturnas.length >= 2) {
+    patrones.push({ tipo: 'fiebre_nocturna', texto: `Fiebre nocturna registrada ${fiebresNocturnas.length} veces` });
+  }
 
   const conFiebre = registros.filter(r => r.fiebre && r.temperatura).sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
   if (conFiebre.length >= 3) {
@@ -139,12 +238,14 @@ function detectarPatrones(registros) {
 
   const conteo = {};
   registros.forEach(r => (r.sintomas || []).forEach(s => { conteo[s] = (conteo[s] || 0) + 1; }));
-  Object.entries(conteo).forEach(([s, c]) => { if (c >= 3) patrones.push({ tipo: 'sintoma_repetido', texto: `"${s}" se repite en ${c} registros` }); });
+  Object.entries(conteo).forEach(([s, c]) => {
+    if (c >= 3) patrones.push({ tipo: 'sintoma_repetido', texto: `"${s}" se repite en ${c} registros` });
+  });
 
   const fechas = registros.map(r => new Date(r.fecha)).sort((a, b) => a - b);
   if (fechas.length >= 2) {
-    const dias = Math.round((fechas[fechas.length - 1] - fechas[0]) / 86400000);
-    if (dias >= 3) patrones.push({ tipo: 'duracion', texto: `Los síntomas llevan ${dias} días registrados` });
+    const dias = Math.max(1, Math.round((fechas[fechas.length - 1] - fechas[0]) / 86400000));
+    if (dias >= 2) patrones.push({ tipo: 'duracion', texto: `Los síntomas llevan ${dias} días de evolución` });
   }
   return patrones;
 }
@@ -162,17 +263,20 @@ function useFonts() {
 }
 
 function GraficaTemperatura({ registros }) {
-  const conTemp = useMemo(() => registros.filter(r => r.temperatura)
+  const conTemp = useMemo(() => (registros || []).filter(r => r.temperatura)
     .map(r => ({ fecha: new Date(r.fecha), temp: parseFloat(r.temperatura) }))
+    .filter(r => !isNaN(r.temp))
     .sort((a, b) => a.fecha - b.fecha), [registros]);
 
   if (conTemp.length < 2) {
-    return <div style={{ padding: 24, textAlign: 'center', color: COLORS.inkLight, fontFamily: 'Source Sans 3, sans-serif', fontSize: 14 }}>
-      Necesitas al menos 2 registros con temperatura para ver la gráfica.
-    </div>;
+    return (
+      <div style={{ padding: 24, textAlign: 'center', color: COLORS.inkLight, fontSize: 13.5 }}>
+        ℹ️ Necesitas al menos 2 registros con temperatura para trazar la curva térmica.
+      </div>
+    );
   }
 
-  const width = 600, height = 220, padding = { top: 20, right: 20, bottom: 36, left: 40 };
+  const width = 600, height = 220, padding = { top: 24, right: 20, bottom: 36, left: 42 };
   const innerW = width - padding.left - padding.right, innerH = height - padding.top - padding.bottom;
   const temps = conTemp.map(p => p.temp);
   const minTemp = Math.min(35.5, Math.floor(Math.min(...temps) * 2) / 2 - 0.5);
@@ -187,57 +291,72 @@ function GraficaTemperatura({ registros }) {
   for (let t = Math.ceil(minTemp); t <= maxTemp; t++) yTicks.push(t);
 
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} style={{ width: '100%', height: 'auto', display: 'block' }}>
+    <svg viewBox={`0 0 ${width} ${height}`} style={{ width: '100%', height: 'auto', display: 'block' }} aria-label="Curva térmica interactiva de temperatura corporal">
+      {/* Línea de alerta de 38°C */}
       <line x1={padding.left} y1={yFiebreLinea} x2={width - padding.right} y2={yFiebreLinea}
-        stroke={COLORS.terracotta} strokeWidth="1" strokeDasharray="4,4" opacity="0.5" />
-      <text x={width - padding.right} y={yFiebreLinea - 4} textAnchor="end" fontSize="10"
-        fill={COLORS.terracottaDark} fontFamily="Source Sans 3, sans-serif">38°C</text>
+        stroke={COLORS.alert} strokeWidth="1.5" strokeDasharray="4,4" opacity="0.8" />
+      <text x={width - padding.right} y={yFiebreLinea - 5} textAnchor="end" fontSize="10"
+        fontWeight="bold" fill={COLORS.alert} fontFamily="Nunito, sans-serif">Límite Fiebre 38°C</text>
+
+      {/* Ticks de temperatura */}
       {yTicks.map(t => (
         <g key={t}>
           <line x1={padding.left} y1={y(t)} x2={width - padding.right} y2={y(t)} stroke={COLORS.border} strokeWidth="1" />
-          <text x={padding.left - 8} y={y(t) + 3} textAnchor="end" fontSize="10" fill={COLORS.inkLight} fontFamily="Source Sans 3, sans-serif">{t}°</text>
+          <text x={padding.left - 8} y={y(t) + 3} textAnchor="end" fontSize="10" fill={COLORS.inkLight} fontFamily="Nunito, sans-serif">{t}°</text>
         </g>
       ))}
-      {conTemp.map((p, i) => i % Math.ceil(conTemp.length / 6) === 0 && (
+
+      {/* Fechas en eje X */}
+      {conTemp.map((p, i) => (i === 0 || i === conTemp.length - 1 || i % Math.ceil(conTemp.length / 5) === 0) && (
         <text key={i} x={x(p.fecha)} y={height - padding.bottom + 16} textAnchor="middle" fontSize="9"
-          fill={COLORS.inkLight} fontFamily="Source Sans 3, sans-serif">{formatFechaCorta(p.fecha)}</text>
+          fill={COLORS.inkLight} fontFamily="Nunito, sans-serif">{formatFechaCorta(p.fecha)}</text>
       ))}
-      <polyline points={puntos} fill="none" stroke={COLORS.sage} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+
+      {/* Línea de evolución */}
+      <polyline points={puntos} fill="none" stroke={COLORS.sage} strokeWidth="2.8" strokeLinejoin="round" strokeLinecap="round" />
+
+      {/* Puntos térmicos */}
       {conTemp.map((p, i) => (
-        <circle key={i} cx={x(p.fecha)} cy={y(p.temp)} r="4" fill={p.temp >= 38 ? COLORS.terracotta : COLORS.sage} stroke={COLORS.white} strokeWidth="1.5" />
+        <g key={i}>
+          <circle cx={x(p.fecha)} cy={y(p.temp)} r="5" fill={p.temp >= 38 ? COLORS.alert : COLORS.sage} stroke={COLORS.white} strokeWidth="2" />
+          <text x={x(p.fecha)} y={y(p.temp) - 8} textAnchor="middle" fontSize="10" fontWeight="bold" fill={p.temp >= 38 ? COLORS.alert : COLORS.ink} fontFamily="Nunito, sans-serif">
+            {p.temp}°
+          </text>
+        </g>
       ))}
     </svg>
   );
 }
 
-// ---------- Estilos compartidos ----------
+// Estilos compartidos optimizados para pantallas táctiles y escritorio
 const S = {
-  app: { fontFamily: 'Nunito, sans-serif', background: COLORS.cream, minHeight: '100%', color: COLORS.ink, padding: '20px 16px 90px' },
-  h1: { fontFamily: 'Quicksand, sans-serif', fontSize: 24, fontWeight: 700, margin: '0 0 4px', color: COLORS.ink },
-  h2: { fontFamily: 'Quicksand, sans-serif', fontSize: 18, fontWeight: 700, margin: '0 0 12px', color: COLORS.ink },
-  sub: { fontSize: 13.5, color: COLORS.inkLight, margin: '0 0 20px', lineHeight: 1.5 },
-  card: { background: COLORS.white, border: `1px solid ${COLORS.border}`, borderRadius: 18, padding: 18, marginBottom: 14, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' },
-  btn: { background: COLORS.sage, color: COLORS.white, border: 'none', borderRadius: 14, padding: '12px 18px', fontSize: 14.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'Nunito, sans-serif' },
-  btnOutline: { background: 'transparent', color: COLORS.sageDark, border: `1.5px solid ${COLORS.sage}`, borderRadius: 14, padding: '11px 17px', fontSize: 14.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'Nunito, sans-serif' },
-  btnTerracotta: { background: COLORS.terracotta, color: COLORS.white, border: 'none', borderRadius: 14, padding: '12px 18px', fontSize: 14.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'Nunito, sans-serif' },
-  input: { width: '100%', boxSizing: 'border-box', padding: '11px 14px', borderRadius: 12, border: `1.5px solid ${COLORS.border}`, fontSize: 14.5, fontFamily: 'Nunito, sans-serif', background: COLORS.white, color: COLORS.ink },
+  app: { fontFamily: 'Nunito, sans-serif', background: COLORS.cream, minHeight: '100vh', color: COLORS.ink, padding: '20px 16px 95px' },
+  h1: { fontFamily: 'Quicksand, sans-serif', fontSize: 23, fontWeight: 700, margin: '0 0 4px', color: COLORS.ink },
+  h2: { fontFamily: 'Quicksand, sans-serif', fontSize: 17.5, fontWeight: 700, margin: '0 0 12px', color: COLORS.ink },
+  sub: { fontSize: 13.5, color: COLORS.inkLight, margin: '0 0 18px', lineHeight: 1.5 },
+  card: { background: COLORS.white, border: `1px solid ${COLORS.border}`, borderRadius: 16, padding: 16, marginBottom: 14, boxShadow: '0 2px 8px rgba(0,0,0,0.03)' },
+  btn: { background: COLORS.sage, color: COLORS.white, border: 'none', borderRadius: 12, padding: '11px 16px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'Nunito, sans-serif', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 },
+  btnOutline: { background: 'transparent', color: COLORS.sageDark, border: `1.5px solid ${COLORS.sage}`, borderRadius: 12, padding: '10px 16px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'Nunito, sans-serif', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 },
+  btnTerracotta: { background: COLORS.terracotta, color: COLORS.white, border: 'none', borderRadius: 12, padding: '11px 16px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'Nunito, sans-serif' },
+  input: { width: '100%', boxSizing: 'border-box', padding: '11px 13px', borderRadius: 10, border: `1.5px solid ${COLORS.border}`, fontSize: 14, fontFamily: 'Nunito, sans-serif', background: COLORS.white, color: COLORS.ink },
   label: { fontSize: 13, color: COLORS.inkLight, marginBottom: 5, display: 'block', fontWeight: 600, fontFamily: 'Nunito, sans-serif' },
   chip: (active) => ({
-    padding: '7px 14px', borderRadius: 24, fontSize: 13.5, cursor: 'pointer', fontWeight: 600,
+    padding: '6px 13px', borderRadius: 20, fontSize: 13, cursor: 'pointer', fontWeight: 600,
     border: `1.5px solid ${active ? COLORS.sage : COLORS.border}`,
     background: active ? COLORS.sage : COLORS.white, color: active ? COLORS.white : COLORS.ink,
-    fontFamily: 'Nunito, sans-serif', transition: 'all 0.2s',
+    fontFamily: 'Nunito, sans-serif', transition: 'all 0.15s ease',
   }),
   bottomNav: {
     position: 'fixed', bottom: 0, left: 0, right: 0,
+    maxWidth: 560, margin: '0 auto',
     display: 'flex', background: COLORS.white,
     borderTop: `1px solid ${COLORS.border}`,
-    padding: '6px 0 14px', zIndex: 100,
-    boxShadow: '0 -2px 12px rgba(0,0,0,0.06)',
+    padding: '6px 0 12px', zIndex: 100,
+    boxShadow: '0 -2px 14px rgba(0,0,0,0.06)',
   },
   navBtn: (active) => ({
     flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-    padding: '4px 0', fontSize: 10.5, fontWeight: active ? 700 : 500,
+    padding: '4px 0', fontSize: 10, fontWeight: active ? 700 : 500,
     color: active ? COLORS.sage : COLORS.inkLight, cursor: 'pointer',
     fontFamily: 'Nunito, sans-serif', background: 'none', border: 'none',
   }),
@@ -247,51 +366,77 @@ const STORAGE_KEY = 'bitacora-sintomas-data-v1';
 
 export default function App() {
   useFonts();
+
   const [data, setData] = useState(() => {
     try {
       const res = window.localStorage.getItem(STORAGE_KEY);
-      if (res) return JSON.parse(res);
+      if (res) {
+        const parsed = JSON.parse(res);
+        if (parsed && Array.isArray(parsed.perfiles) && parsed.perfiles.length > 0) {
+          return parsed;
+        }
+      }
     } catch {
-      // sin datos previos
+      // Fallback a demo data
     }
-    return { perfiles: [], registros: [], contactos: [], pais: 'Chile' };
+    return DEMO_DATA;
   });
-  const [perfilActivoId, setPerfilActivoId] = useState(() => data.perfiles?.[0]?.id || null);
-  const [vista, setVista] = useState('registro'); // registro | historial | guia | resumen | ayuda | ia
+
+  const perfiles = data.perfiles || [];
+  const [perfilActivoId, setPerfilActivoId] = useState(() => perfiles[0]?.id || DEMO_PACIENTE_ID);
+  const [vista, setVista] = useState('registro'); // registro | historial | dosis | ia | guia | resumen | ayuda
   const [mostrarForm, setMostrarForm] = useState(false);
   const [mostrarNuevoPerfil, setMostrarNuevoPerfil] = useState(false);
+  const [prefillMedicamento, setPrefillMedicamento] = useState(null);
 
-  // Guardar datos
+  // Asegurar persistencia y fallback seguro
   useEffect(() => {
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch {
-      // manejo de almacenamiento local
+      // safe storage fallback
     }
   }, [data]);
 
-  const perfiles = data.perfiles || [];
-  const perfilActivo = perfiles.find(p => p.id === perfilActivoId);
+  // Fallback seguro inquebrantable para perfilActivo
+  const perfilActivo = useMemo(() => {
+    return perfiles.find(p => p.id === perfilActivoId) || perfiles[0] || null;
+  }, [perfiles, perfilActivoId]);
+
+  // Si no hay perfil seleccionado válido pero existen perfiles, sincronizar ID
+  useEffect(() => {
+    if (perfilActivo && perfilActivo.id !== perfilActivoId) {
+      setPerfilActivoId(perfilActivo.id);
+    }
+  }, [perfilActivo, perfilActivoId]);
+
   const registrosDelPerfil = useMemo(() => {
     const regs = data.registros || [];
-    return regs.filter(r => r.perfilId === perfilActivoId).sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
-  }, [data.registros, perfilActivoId]);
+    if (!perfilActivo) return [];
+    return regs.filter(r => r.perfilId === perfilActivo.id).sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+  }, [data.registros, perfilActivo]);
+
   const patrones = useMemo(() => detectarPatrones(registrosDelPerfil), [registrosDelPerfil]);
 
-  function crearPerfil(nombre) {
-    const nuevo = { id: uid(), nombre, creado: new Date().toISOString() };
+  function crearPerfil(nombre, pesoKg = 14) {
+    const nuevo = { id: uid(), nombre, pesoKg: parseFloat(pesoKg) || 14, creado: new Date().toISOString() };
     setData(d => ({ ...d, perfiles: [...(d.perfiles || []), nuevo] }));
     setPerfilActivoId(nuevo.id);
     setMostrarNuevoPerfil(false);
   }
 
   function agregarRegistro(registro) {
-    setData(d => ({ ...d, registros: [...(d.registros || []), { ...registro, id: uid(), perfilId: perfilActivoId }] }));
+    if (!perfilActivo) return;
+    setData(d => ({
+      ...d,
+      registros: [...(d.registros || []), { ...registro, id: uid(), perfilId: perfilActivo.id }]
+    }));
     setMostrarForm(false);
+    setPrefillMedicamento(null);
   }
 
   function eliminarRegistro(id) {
-    setData(d => ({ ...d, registros: d.registros.filter(r => r.id !== id) }));
+    setData(d => ({ ...d, registros: (d.registros || []).filter(r => r.id !== id) }));
   }
 
   function agregarContacto(contacto) {
@@ -306,37 +451,71 @@ export default function App() {
     setData(d => ({ ...d, pais }));
   }
 
-  if (perfiles.length === 0) {
-    return (
-      <div style={S.app}>
-        <h1 style={S.h1}>👋 Hi Doctor</h1>
-        <p style={S.sub}>Estamos contigo. Registra y organiza los síntomas de tus hijos para llegar preparado a la consulta.</p>
-        <div style={S.card}>
-          <h2 style={S.h2}>Crea el primer perfil</h2>
-          <PerfilForm onCrear={crearPerfil} />
-        </div>
-      </div>
-    );
+  function restablecerDatosDemo() {
+    setData(DEMO_DATA);
+    setPerfilActivoId(DEMO_PACIENTE_ID);
+    setMostrarForm(false);
+    setMostrarNuevoPerfil(false);
+    setVista('registro');
+  }
+
+  function transferirDosisARegistro(dosisData) {
+    setPrefillMedicamento(dosisData);
+    setVista('registro');
+    setMostrarForm(true);
   }
 
   return (
     <div style={S.app}>
-      <h1 style={S.h1}>👋 Hola, estamos contigo</h1>
-      <p style={S.sub}>Hi Doctor · Registra lo que observas para conversar mejor con el pediatra.</p>
+      {/* Barra de estado / Marca */}
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <div>
+          <h1 style={S.h1}>🩺 HiDoctor</h1>
+          <p style={{ ...S.sub, margin: 0, fontSize: 12.5 }}>Bitácora Pediátrica & Doctor IA</p>
+        </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button
+            onClick={restablecerDatosDemo}
+            style={{
+              background: COLORS.white,
+              border: `1px solid ${COLORS.border}`,
+              borderRadius: 8,
+              padding: '5px 9px',
+              fontSize: 11,
+              color: COLORS.sageDark,
+              cursor: 'pointer',
+              fontWeight: 600
+            }}
+            title="Cargar o reiniciar datos de demostración médica"
+            aria-label="Reiniciar caso de demostración"
+          >
+            🔄 Caso Demo
+          </button>
+        </div>
+      </header>
 
-      {/* Selector de perfil */}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+      {/* Selector de perfil o aviso de bienvenida */}
+      <nav aria-label="Perfiles de pacientes" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16, alignItems: 'center' }}>
         {perfiles.map(p => (
-          <div key={p.id} onClick={() => setPerfilActivoId(p.id)} style={S.chip(p.id === perfilActivoId)}>
-            {p.nombre}
-          </div>
+          <button
+            key={p.id}
+            onClick={() => setPerfilActivoId(p.id)}
+            style={S.chip(p.id === perfilActivo?.id)}
+            aria-pressed={p.id === perfilActivo?.id}
+          >
+            🧒 {p.nombre}
+          </button>
         ))}
         {!mostrarNuevoPerfil ? (
-          <div onClick={() => setMostrarNuevoPerfil(true)} style={{ ...S.chip(false), borderStyle: 'dashed', color: COLORS.sageDark }}>
-            + Agregar
-          </div>
+          <button
+            onClick={() => setMostrarNuevoPerfil(true)}
+            style={{ ...S.chip(false), borderStyle: 'dashed', color: COLORS.sageDark }}
+            aria-label="Agregar nuevo paciente"
+          >
+            + Paciente
+          </button>
         ) : null}
-      </div>
+      </nav>
 
       {mostrarNuevoPerfil && (
         <div style={S.card}>
@@ -344,151 +523,241 @@ export default function App() {
         </div>
       )}
 
-      {perfilActivo && (
-        <>
+      {/* Contenido según la pestaña activa */}
+      <main>
+        {vista === 'registro' && (
+          <VistaRegistro
+            perfilActivo={perfilActivo}
+            mostrarForm={mostrarForm}
+            setMostrarForm={setMostrarForm}
+            agregarRegistro={agregarRegistro}
+            registrosDelPerfil={registrosDelPerfil}
+            patrones={patrones}
+            prefillMedicamento={prefillMedicamento}
+            onCrearPerfilPrimero={() => setMostrarNuevoPerfil(true)}
+          />
+        )}
 
+        {vista === 'historial' && (
+          <VistaHistorial
+            perfilActivo={perfilActivo}
+            registrosDelPerfil={registrosDelPerfil}
+            eliminarRegistro={eliminarRegistro}
+          />
+        )}
 
-          {vista === 'registro' && (
-            <VistaRegistro
-              perfilActivo={perfilActivo}
-              mostrarForm={mostrarForm}
-              setMostrarForm={setMostrarForm}
-              agregarRegistro={agregarRegistro}
-              registrosDelPerfil={registrosDelPerfil}
-              patrones={patrones}
-            />
-          )}
+        {vista === 'dosis' && (
+          <VistaCalculadoraDosis
+            perfilActivo={perfilActivo}
+            onTransferirDosis={transferirDosisARegistro}
+          />
+        )}
 
-          {vista === 'historial' && (
-            <VistaHistorial registrosDelPerfil={registrosDelPerfil} eliminarRegistro={eliminarRegistro} />
-          )}
+        {vista === 'ia' && (
+          <VistaAsistenteIA
+            perfilActivo={perfilActivo}
+            registrosDelPerfil={registrosDelPerfil}
+            patrones={patrones}
+          />
+        )}
 
-          {vista === 'ia' && (
-            <VistaAsistenteIA
-              perfilActivo={perfilActivo}
-              registrosDelPerfil={registrosDelPerfil}
-              patrones={patrones}
-            />
-          )}
+        {vista === 'guia' && <VistaGuia />}
 
-          {vista === 'guia' && <VistaGuia />}
+        {vista === 'resumen' && (
+          <VistaResumen
+            perfilActivo={perfilActivo}
+            registrosDelPerfil={registrosDelPerfil}
+            patrones={patrones}
+          />
+        )}
 
-          {vista === 'resumen' && (
-            <VistaResumen perfilActivo={perfilActivo} registrosDelPerfil={registrosDelPerfil} patrones={patrones} />
-          )}
+        {vista === 'ayuda' && (
+          <VistaAyuda
+            contactos={data.contactos || []}
+            agregarContacto={agregarContacto}
+            eliminarContacto={eliminarContacto}
+            paisSeleccionado={data.pais || 'Chile'}
+            setPaisSeleccionado={setPais}
+          />
+        )}
+      </main>
 
-          {vista === 'ayuda' && (
-            <VistaAyuda
-              contactos={data.contactos || []}
-              agregarContacto={agregarContacto}
-              eliminarContacto={eliminarContacto}
-              paisSeleccionado={data.pais || 'Chile'}
-              setPaisSeleccionado={setPais}
-            />
-          )}
+      {/* Firma de Titularidad Canónica */}
+      <footer style={{ textAlign: 'center', marginTop: 32, marginBottom: 8 }}>
+        <p style={{
+          fontSize: 11.5,
+          letterSpacing: 0.5,
+          color: COLORS.inkLight,
+          fontFamily: 'Nunito, sans-serif'
+        }}>
+          HiDoctor · Desarrollado por Mauricio Uribe Maldonado · Privacidad Local 100% Offline-First
+        </p>
+      </footer>
 
-          {/* Firma del desarrollador */}
-          <div style={{ textAlign: 'center', marginTop: 30, marginBottom: 10 }}>
-            <div style={{
-              fontSize: 12,
-              letterSpacing: 0.8,
-              textTransform: 'capitalize',
-              opacity: 0.75,
-              display: 'inline-block',
-              color: COLORS.inkLight,
-              fontFamily: 'Nunito, sans-serif'
-            }}>desarrollado por mauricio uribe maldonado</div>
-          </div>
-
-          {/* Navegación inferior con iconos */}
-          <div style={S.bottomNav}>
-            <div style={S.navBtn(vista === 'registro')} onClick={() => setVista('registro')}>
-              <span style={{ fontSize: 20 }}>📝</span>
-              <span>Registrar</span>
-            </div>
-            <div style={S.navBtn(vista === 'historial')} onClick={() => setVista('historial')}>
-              <span style={{ fontSize: 20 }}>📊</span>
-              <span>Historial</span>
-            </div>
-            <div style={S.navBtn(vista === 'ia')} onClick={() => setVista('ia')}>
-              <span style={{ fontSize: 20 }}>🤖</span>
-              <span>Doctor IA</span>
-            </div>
-            <div style={S.navBtn(vista === 'guia')} onClick={() => setVista('guia')}>
-              <span style={{ fontSize: 20 }}>📖</span>
-              <span>Guía</span>
-            </div>
-            <div style={S.navBtn(vista === 'resumen')} onClick={() => setVista('resumen')}>
-              <span style={{ fontSize: 20 }}>📋</span>
-              <span>Resumen</span>
-            </div>
-            <div style={S.navBtn(vista === 'ayuda')} onClick={() => setVista('ayuda')}>
-              <span style={{ fontSize: 20 }}>🆘</span>
-              <span>Ayuda</span>
-            </div>
-          </div>
-        </>
-      )}
+      {/* Barra de Navegación Inferior Siempre Operativa */}
+      <nav style={S.bottomNav} aria-label="Navegación principal de HiDoctor">
+        <button style={S.navBtn(vista === 'registro')} onClick={() => setVista('registro')} aria-label="Pestaña Registro">
+          <span style={{ fontSize: 19 }}>📝</span>
+          <span>Registro</span>
+        </button>
+        <button style={S.navBtn(vista === 'historial')} onClick={() => setVista('historial')} aria-label="Pestaña Curva e Historial">
+          <span style={{ fontSize: 19 }}>📊</span>
+          <span>Curva</span>
+        </button>
+        <button style={S.navBtn(vista === 'dosis')} onClick={() => setVista('dosis')} aria-label="Pestaña Calculadora de Dosis por Peso">
+          <span style={{ fontSize: 19 }}>💊</span>
+          <span>Dosis</span>
+        </button>
+        <button style={S.navBtn(vista === 'ia')} onClick={() => setVista('ia')} aria-label="Pestaña Doctor IA">
+          <span style={{ fontSize: 19 }}>🤖</span>
+          <span>Doctor IA</span>
+        </button>
+        <button style={S.navBtn(vista === 'guia')} onClick={() => setVista('guia')} aria-label="Pestaña Guía de Alarma">
+          <span style={{ fontSize: 19 }}>📖</span>
+          <span>Guía</span>
+        </button>
+        <button style={S.navBtn(vista === 'ayuda')} onClick={() => setVista('ayuda')} aria-label="Pestaña Emergencias y Ayuda">
+          <span style={{ fontSize: 19 }}>🆘</span>
+          <span>Ayuda</span>
+        </button>
+      </nav>
     </div>
   );
 }
 
 function PerfilForm({ onCrear, onCancelar }) {
   const [nombre, setNombre] = useState('');
+  const [peso, setPeso] = useState('14');
+
   return (
     <div>
-      <label style={S.label}>Nombre del niño o niña</label>
-      <input style={S.input} value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Ej. Sofía" />
-      <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-        <button style={S.btn} onClick={() => nombre.trim() && onCrear(nombre.trim())}>Crear perfil</button>
-        {onCancelar && <button style={S.btnOutline} onClick={onCancelar}>Cancelar</button>}
+      <h2 style={{ ...S.h2, fontSize: 16 }}>Nuevo Paciente Infantil</h2>
+      <div style={{ marginBottom: 10 }}>
+        <label htmlFor="perfil-nombre" style={S.label}>Nombre del niño o niña</label>
+        <input
+          id="perfil-nombre"
+          style={S.input}
+          value={nombre}
+          onChange={e => setNombre(e.target.value)}
+          placeholder="Ej. Sofía, Mateo, Lucas"
+        />
       </div>
-    </div>
-  );
-}
-
-function VistaRegistro({ perfilActivo, mostrarForm, setMostrarForm, agregarRegistro, registrosDelPerfil, patrones }) {
-  return (
-    <div>
-      {patrones.length > 0 && (
-        <div style={{ ...S.card, background: COLORS.alertBg, border: `1px solid ${COLORS.terracotta}` }}>
-          <h2 style={{ ...S.h2, fontSize: 15, color: COLORS.terracottaDark }}>Patrones detectados</h2>
-          {patrones.map((p, i) => (
-            <p key={i} style={{ fontSize: 13.5, margin: '4px 0', color: COLORS.ink }}>• {p.texto}</p>
-          ))}
-        </div>
-      )}
-
-      {!mostrarForm ? (
-        <button style={{ ...S.btn, width: '100%' }} onClick={() => setMostrarForm(true)}>
-          + Nuevo registro de {perfilActivo.nombre}
+      <div style={{ marginBottom: 12 }}>
+        <label htmlFor="perfil-peso" style={S.label}>Peso aproximado en kilogramos (opcional)</label>
+        <input
+          id="perfil-peso"
+          type="number"
+          step="0.5"
+          style={S.input}
+          value={peso}
+          onChange={e => setPeso(e.target.value)}
+          placeholder="Ej. 14"
+        />
+      </div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button
+          style={{ ...S.btn, flex: 1 }}
+          onClick={() => nombre.trim() && onCrear(nombre.trim(), peso)}
+          disabled={!nombre.trim()}
+        >
+          Guardar paciente
         </button>
-      ) : (
-        <NuevoRegistroForm onGuardar={agregarRegistro} onCancelar={() => setMostrarForm(false)} />
-      )}
-
-      <div style={{ marginTop: 20 }}>
-        <h2 style={S.h2}>Últimos registros</h2>
-        {registrosDelPerfil.slice(0, 3).map(r => <RegistroCard key={r.id} registro={r} />)}
-        {registrosDelPerfil.length === 0 && (
-          <p style={{ fontSize: 13.5, color: COLORS.inkLight }}>Aún no hay registros para {perfilActivo.nombre}.</p>
+        {onCancelar && (
+          <button style={{ ...S.btnOutline, flex: 1 }} onClick={onCancelar}>
+            Cancelar
+          </button>
         )}
       </div>
     </div>
   );
 }
 
-function NuevoRegistroForm({ onGuardar }) {
+function VistaRegistro({
+  perfilActivo,
+  mostrarForm,
+  setMostrarForm,
+  agregarRegistro,
+  registrosDelPerfil,
+  patrones,
+  prefillMedicamento,
+  onCrearPerfilPrimero
+}) {
+  if (!perfilActivo) {
+    return (
+      <div style={S.card}>
+        <h2 style={S.h2}>No hay pacientes registrados</h2>
+        <p style={{ fontSize: 13.5, color: COLORS.inkLight, marginBottom: 14 }}>
+          Crea el perfil de tu hijo/a o carga el caso de demostración clínica para comenzar.
+        </p>
+        <button style={S.btn} onClick={onCrearPerfilPrimero}>+ Crear perfil de paciente</button>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {/* Alerta de patrones clínicos detectados */}
+      {patrones.length > 0 && (
+        <div style={{ ...S.card, background: COLORS.alertBg, borderLeft: `4px solid ${COLORS.alert}`, padding: '12px 16px' }}>
+          <h2 style={{ ...S.h2, fontSize: 14, color: COLORS.alert, margin: '0 0 6px' }}>
+            ⚠️ Patrones Clínicos en {perfilActivo.nombre}:
+          </h2>
+          {patrones.map((p, i) => (
+            <p key={i} style={{ fontSize: 13, margin: '3px 0', color: COLORS.ink }}>• {p.texto}</p>
+          ))}
+        </div>
+      )}
+
+      {/* Botón para nuevo registro o formulario activo */}
+      {!mostrarForm ? (
+        <button
+          style={{ ...S.btn, width: '100%', padding: '14px 18px', fontSize: 15 }}
+          onClick={() => setMostrarForm(true)}
+          aria-label={`Nuevo registro para ${perfilActivo.nombre}`}
+        >
+          ➕ Nuevo Registro de {perfilActivo.nombre}
+        </button>
+      ) : (
+        <NuevoRegistroForm
+          onGuardar={agregarRegistro}
+          onCancelar={() => setMostrarForm(false)}
+          prefillMedicamento={prefillMedicamento}
+          nombrePaciente={perfilActivo.nombre}
+        />
+      )}
+
+      {/* Lista rápida de los últimos registros */}
+      <div style={{ marginTop: 22 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <h2 style={{ ...S.h2, margin: 0 }}>Últimos registros</h2>
+          <span style={{ fontSize: 12, color: COLORS.inkLight }}>{registrosDelPerfil.length} anotaciones</span>
+        </div>
+
+        {registrosDelPerfil.slice(0, 3).map(r => (
+          <RegistroCard key={r.id} registro={r} />
+        ))}
+
+        {registrosDelPerfil.length === 0 && (
+          <div style={{ ...S.card, textAlign: 'center', padding: 24, color: COLORS.inkLight }}>
+            <p style={{ margin: 0, fontSize: 13.5 }}>No hay registros para {perfilActivo.nombre}. ¡Comienza anotando sus síntomas o temperatura!</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function NuevoRegistroForm({ onGuardar, onCancelar, prefillMedicamento, nombrePaciente }) {
   const [sintomas, setSintomas] = useState([]);
   const [fiebre, setFiebre] = useState(false);
   const [temperatura, setTemperatura] = useState('');
   const [nota, setNota] = useState('');
   const [foto, setFoto] = useState(null);
-  const [medNombre, setMedNombre] = useState('');
-  const [medDosis, setMedDosis] = useState('');
-  const [medUnidad, setMedUnidad] = useState('ml');
-  const [medIntervalo, setMedIntervalo] = useState('');
-  const [agregarMed, setAgregarMed] = useState(false);
+  const [medNombre, setMedNombre] = useState(() => prefillMedicamento?.nombre || '');
+  const [medDosis, setMedDosis] = useState(() => prefillMedicamento?.dosis || '');
+  const [medUnidad, setMedUnidad] = useState(() => prefillMedicamento?.unidad || 'ml');
+  const [medIntervalo, setMedIntervalo] = useState(() => prefillMedicamento?.intervaloHoras ? String(prefillMedicamento.intervaloHoras) : '8');
+  const [agregarMed, setAgregarMed] = useState(() => Boolean(prefillMedicamento));
   const fileRef = useRef(null);
 
   function toggleSintoma(s) {
@@ -496,7 +765,7 @@ function NuevoRegistroForm({ onGuardar }) {
   }
 
   function handleFoto(e) {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => setFoto({ data: reader.result, timestamp: new Date().toISOString() });
@@ -506,11 +775,17 @@ function NuevoRegistroForm({ onGuardar }) {
   function guardar() {
     const registro = {
       fecha: new Date().toISOString(),
-      sintomas, fiebre, temperatura: fiebre ? temperatura : '',
-      nota, foto,
-      medicamento: agregarMed && medNombre ? {
-        nombre: medNombre, dosis: medDosis, unidad: medUnidad,
-        intervaloHoras: parseFloat(medIntervalo) || null, ultimaHora: new Date().toISOString(),
+      sintomas,
+      fiebre,
+      temperatura: fiebre && temperatura ? temperatura.replace(',', '.') : '',
+      nota: nota.trim(),
+      foto,
+      medicamento: agregarMed && medNombre.trim() ? {
+        nombre: medNombre.trim(),
+        dosis: medDosis.trim(),
+        unidad: medUnidad,
+        intervaloHoras: parseFloat(medIntervalo) || null,
+        ultimaHora: new Date().toISOString(),
       } : null,
     };
     onGuardar(registro);
@@ -518,125 +793,476 @@ function NuevoRegistroForm({ onGuardar }) {
 
   return (
     <div style={S.card}>
-      <h2 style={S.h2}>Nuevo registro</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <h2 style={{ ...S.h2, margin: 0, fontSize: 16 }}>Anotar Síntomas de {nombrePaciente}</h2>
+        <button
+          onClick={onCancelar}
+          style={{ background: 'none', border: 'none', color: COLORS.inkLight, fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}
+          aria-label="Cerrar formulario"
+        >
+          ✕ Cancelar
+        </button>
+      </div>
 
-      <label style={S.label}>Síntomas observados</label>
+      <label style={S.label}>Selecciona los síntomas observados:</label>
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
         {SYMPTOM_OPTIONS.map(s => (
-          <div key={s} style={S.chip(sintomas.includes(s))} onClick={() => toggleSintoma(s)}>{s}</div>
+          <button
+            type="button"
+            key={s}
+            style={S.chip(sintomas.includes(s))}
+            onClick={() => toggleSintoma(s)}
+            aria-pressed={sintomas.includes(s)}
+          >
+            {s}
+          </button>
         ))}
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-        <input type="checkbox" id="fiebre" checked={fiebre} onChange={e => setFiebre(e.target.checked)} />
-        <label htmlFor="fiebre" style={{ fontSize: 14 }}>Tiene fiebre</label>
-      </div>
-
-      {fiebre && (
-        <div style={{ marginBottom: 14 }}>
-          <label style={S.label}>Temperatura (°C)</label>
-          <input style={S.input} type="number" step="0.1" value={temperatura} onChange={e => setTemperatura(e.target.value)} placeholder="Ej. 38.5" />
-        </div>
-      )}
-
-      <div style={{ marginBottom: 14 }}>
-        <label style={S.label}>Nota libre</label>
-        <textarea style={{ ...S.input, minHeight: 60, resize: 'vertical' }} value={nota} onChange={e => setNota(e.target.value)} placeholder="¿Algo más que observaste?" />
-      </div>
-
-      <div style={{ marginBottom: 14 }}>
-        <label style={S.label}>Foto (útil para erupciones)</label>
-        <input ref={fileRef} type="file" accept="image/*" onChange={handleFoto} style={{ fontSize: 13 }} />
-        {foto && <img src={foto.data} alt="Registro" style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 8, marginTop: 8 }} />}
-      </div>
-
-      <div style={{ marginBottom: 8 }}>
+      {/* Fiebre */}
+      <div style={{ background: COLORS.cream, borderRadius: 10, padding: 12, marginBottom: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <input type="checkbox" id="med" checked={agregarMed} onChange={e => setAgregarMed(e.target.checked)} />
-          <label htmlFor="med" style={{ fontSize: 14 }}>Administré un medicamento ahora</label>
+          <input
+            type="checkbox"
+            id="chk-fiebre"
+            checked={fiebre}
+            onChange={e => setFiebre(e.target.checked)}
+            style={{ width: 18, height: 18, cursor: 'pointer' }}
+          />
+          <label htmlFor="chk-fiebre" style={{ fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+            🌡️ Tiene temperatura elevada / fiebre
+          </label>
         </div>
+
+        {fiebre && (
+          <div style={{ marginTop: 10 }}>
+            <label htmlFor="inp-temp" style={S.label}>Temperatura marcada en termómetro (°C)</label>
+            <input
+              id="inp-temp"
+              style={{ ...S.input, fontSize: 16, fontWeight: 600 }}
+              type="number"
+              step="0.1"
+              value={temperatura}
+              onChange={e => setTemperatura(e.target.value)}
+              placeholder="Ej. 38.5"
+            />
+          </div>
+        )}
       </div>
 
-      {agregarMed && (
-        <div style={{ marginBottom: 10, paddingLeft: 4 }}>
-          <label style={S.label}>Nombre del medicamento</label>
-          <input style={{ ...S.input, marginBottom: 8 }} value={medNombre} onChange={e => setMedNombre(e.target.value)} placeholder="Ej. Paracetamol" />
-          <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-            <div style={{ flex: 1 }}>
-              <label style={S.label}>Dosis</label>
-              <input style={S.input} type="number" value={medDosis} onChange={e => setMedDosis(e.target.value)} placeholder="5" />
-            </div>
-            <div style={{ flex: 1 }}>
-              <label style={S.label}>Unidad</label>
-              <select style={S.input} value={medUnidad} onChange={e => setMedUnidad(e.target.value)}>
-                {UNIT_OPTIONS.map(u => <option key={u} value={u}>{u}</option>)}
-              </select>
-            </div>
-          </div>
-          <label style={S.label}>Intervalo entre dosis (horas)</label>
-          <input style={S.input} type="number" value={medIntervalo} onChange={e => setMedIntervalo(e.target.value)} placeholder="Ej. 8" />
+      {/* Medicación */}
+      <div style={{ background: '#F8F9FA', borderRadius: 10, padding: 12, marginBottom: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <input
+            type="checkbox"
+            id="chk-med"
+            checked={agregarMed}
+            onChange={e => setAgregarMed(e.target.checked)}
+            style={{ width: 18, height: 18, cursor: 'pointer' }}
+          />
+          <label htmlFor="chk-med" style={{ fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+            💊 Administré un medicamento ahora
+          </label>
         </div>
-      )}
 
-      <button style={{ ...S.btn, width: '100%', marginTop: 8 }} onClick={guardar}>Guardar registro</button>
+        {agregarMed && (
+          <div style={{ marginTop: 10 }}>
+            <label htmlFor="med-nombre" style={S.label}>Fármaco / Remedio</label>
+            <input
+              id="med-nombre"
+              style={{ ...S.input, marginBottom: 8 }}
+              value={medNombre}
+              onChange={e => setMedNombre(e.target.value)}
+              placeholder="Ej. Paracetamol Jarabe 120mg/5ml"
+            />
+            <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+              <div style={{ flex: 1 }}>
+                <label htmlFor="med-dosis" style={S.label}>Dosis administrada</label>
+                <input
+                  id="med-dosis"
+                  style={S.input}
+                  type="number"
+                  step="0.1"
+                  value={medDosis}
+                  onChange={e => setMedDosis(e.target.value)}
+                  placeholder="Ej. 5"
+                />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label htmlFor="med-unidad" style={S.label}>Unidad</label>
+                <select
+                  id="med-unidad"
+                  style={S.input}
+                  value={medUnidad}
+                  onChange={e => setMedUnidad(e.target.value)}
+                >
+                  {UNIT_OPTIONS.map(u => <option key={u} value={u}>{u}</option>)}
+                </select>
+              </div>
+            </div>
+            <label htmlFor="med-intervalo" style={S.label}>Cada cuántas horas se repite (Intervalo)</label>
+            <input
+              id="med-intervalo"
+              style={S.input}
+              type="number"
+              value={medIntervalo}
+              onChange={e => setMedIntervalo(e.target.value)}
+              placeholder="Ej. 6 u 8"
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Nota libre */}
+      <div style={{ marginBottom: 14 }}>
+        <label htmlFor="reg-nota" style={S.label}>Observaciones o notas adicionales</label>
+        <textarea
+          id="reg-nota"
+          style={{ ...S.input, minHeight: 65, resize: 'vertical' }}
+          value={nota}
+          onChange={e => setNota(e.target.value)}
+          placeholder="¿Comió bien? ¿Está decaído o irritable? ¿Alguna erupción?"
+        />
+      </div>
+
+      {/* Foto opcional */}
+      <div style={{ marginBottom: 16 }}>
+        <label htmlFor="reg-foto" style={S.label}>Foto opcional (útil para erupciones en la piel)</label>
+        <input
+          id="reg-foto"
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFoto}
+          style={{ fontSize: 13 }}
+        />
+        {foto && (
+          <img src={foto.data} alt="Foto del registro" style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 8, marginTop: 8 }} />
+        )}
+      </div>
+
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button style={{ ...S.btn, flex: 2 }} onClick={guardar}>
+          💾 Guardar registro
+        </button>
+        <button style={{ ...S.btnOutline, flex: 1 }} onClick={onCancelar}>
+          Cancelar
+        </button>
+      </div>
     </div>
   );
 }
 
 function RegistroCard({ registro }) {
   const proximaDosis = registro.medicamento ? calcularProximaDosis(registro.medicamento) : null;
+  const tempNum = parseFloat(registro.temperatura);
+
   return (
-    <div style={S.card}>
+    <article style={S.card} aria-label={`Registro del ${formatFecha(registro.fecha)}`}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-        <span style={{ fontSize: 13, color: COLORS.inkLight }}>{formatFecha(registro.fecha)}</span>
+        <span style={{ fontSize: 12.5, color: COLORS.inkLight }}>🕒 {formatFecha(registro.fecha)}</span>
         {registro.fiebre && registro.temperatura && (
-          <span style={{ fontSize: 13, fontWeight: 600, color: parseFloat(registro.temperatura) >= 38 ? COLORS.terracottaDark : COLORS.sageDark }}>
-            {registro.temperatura}°C
+          <span style={{
+            fontSize: 13.5,
+            fontWeight: 700,
+            padding: '2px 8px',
+            borderRadius: 6,
+            background: tempNum >= 38 ? COLORS.alertBg : '#E8F5E9',
+            color: tempNum >= 38 ? COLORS.alert : '#2E7D32',
+          }}>
+            🌡️ {registro.temperatura}°C
           </span>
         )}
       </div>
+
       {registro.sintomas && registro.sintomas.length > 0 && (
         <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', margin: '8px 0' }}>
           {registro.sintomas.map(s => (
-            <span key={s} style={{ fontSize: 11.5, background: COLORS.cream, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: '2px 9px', color: COLORS.ink }}>{s}</span>
+            <span key={s} style={{
+              fontSize: 11.5,
+              background: COLORS.cream,
+              border: `1px solid ${COLORS.border}`,
+              borderRadius: 12,
+              padding: '2px 8px',
+              color: COLORS.ink
+            }}>
+              {s}
+            </span>
           ))}
         </div>
       )}
-      {registro.nota && <p style={{ fontSize: 13.5, margin: '6px 0', color: COLORS.ink }}>{registro.nota}</p>}
-      {registro.foto && <img src={registro.foto.data} alt="Foto del registro" style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 8, marginTop: 6 }} />}
+
+      {registro.nota && (
+        <p style={{ fontSize: 13.5, margin: '6px 0', color: COLORS.ink, lineHeight: 1.4 }}>
+          {registro.nota}
+        </p>
+      )}
+
+      {registro.foto && (
+        <img src={registro.foto.data} alt="Foto adjunta al registro" style={{ width: 70, height: 70, objectFit: 'cover', borderRadius: 8, marginTop: 6 }} />
+      )}
+
       {registro.medicamento && (
-        <div style={{ marginTop: 8, fontSize: 12.5, color: COLORS.sageDark, background: '#EEF3EE', borderRadius: 8, padding: '6px 10px' }}>
-          {registro.medicamento.nombre} — {registro.medicamento.dosis} {registro.medicamento.unidad}
-          {proximaDosis && <span> · próxima dosis aprox. {formatFecha(proximaDosis.toISOString())}</span>}
+        <div style={{
+          marginTop: 8,
+          fontSize: 12.5,
+          color: COLORS.sageDark,
+          background: '#F9EDE9',
+          borderRadius: 8,
+          padding: '7px 10px',
+          borderLeft: `3px solid ${COLORS.sage}`
+        }}>
+          <strong>💊 {registro.medicamento.nombre}:</strong> {registro.medicamento.dosis} {registro.medicamento.unidad}
+          {proximaDosis && (
+            <div style={{ marginTop: 2, fontSize: 11.5, color: COLORS.inkLight }}>
+              ⏰ Próxima toma sugerida: <strong>{formatFecha(proximaDosis.toISOString())}</strong>
+            </div>
+          )}
         </div>
+      )}
+    </article>
+  );
+}
+
+function VistaHistorial({ perfilActivo, registrosDelPerfil, eliminarRegistro }) {
+  if (!perfilActivo) {
+    return <div style={S.card}><p style={{ margin: 0, color: COLORS.inkLight }}>Selecciona o crea un paciente para revisar su historial.</p></div>;
+  }
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <h2 style={{ ...S.h2, margin: 0 }}>Historial Clínico: {perfilActivo.nombre}</h2>
+        <span style={{ fontSize: 12, color: COLORS.inkLight }}>{registrosDelPerfil.length} eventos</span>
+      </div>
+
+      {/* Gráfica interactiva si hay registros con temperatura */}
+      <div style={S.card}>
+        <h3 style={{ ...S.h2, fontSize: 14, marginBottom: 8, color: COLORS.ink }}>
+          📈 Curva Térmica Vectorial SVG (Evolución de la Fiebre)
+        </h3>
+        <GraficaTemperatura registros={registrosDelPerfil} />
+      </div>
+
+      {/* Listado completo con opción de eliminación */}
+      <h3 style={{ ...S.h2, fontSize: 15, marginTop: 20, marginBottom: 10 }}>Cronología de eventos</h3>
+      {registrosDelPerfil.map(r => (
+        <div key={r.id} style={{ position: 'relative' }}>
+          <RegistroCard registro={r} />
+          <button
+            onClick={() => eliminarRegistro(r.id)}
+            style={{
+              position: 'absolute', top: 12, right: 12, background: 'none', border: 'none',
+              color: COLORS.inkLight, fontSize: 11.5, cursor: 'pointer', textDecoration: 'underline'
+            }}
+            aria-label="Eliminar este registro"
+          >
+            eliminar
+          </button>
+        </div>
+      ))}
+
+      {registrosDelPerfil.length === 0 && (
+        <p style={{ fontSize: 13.5, color: COLORS.inkLight, textAlign: 'center', padding: 20 }}>
+          No hay registros clínicos guardados para {perfilActivo.nombre}.
+        </p>
       )}
     </div>
   );
 }
 
-function VistaHistorial({ registrosDelPerfil, eliminarRegistro }) {
+// ---------- Calculadora Canónica de Dosis por Peso ----------
+function VistaCalculadoraDosis({ perfilActivo, onTransferirDosis }) {
+  const [farmaco, setFarmaco] = useState('paracetamol'); // paracetamol | ibuprofeno
+  const [pesoKg, setPesoKg] = useState(() => perfilActivo?.pesoKg ? String(perfilActivo.pesoKg) : '14');
+  const [presentacion, setPresentacion] = useState('jarabe120');
+
+  const PRESENTACIONES = {
+    paracetamol: [
+      { id: 'gotas100', nombre: 'Gotas Pediátricas (100 mg/ml)', mgPorMl: 100, esGotas: true },
+      { id: 'jarabe120', nombre: 'Jarabe Pediátrico (120 mg / 5 ml) [24 mg/ml]', mgPorMl: 24, esGotas: false },
+      { id: 'jarabe160', nombre: 'Jarabe Pediátrico (160 mg / 5 ml) [32 mg/ml]', mgPorMl: 32, esGotas: false },
+      { id: 'jarabe250', nombre: 'Jarabe Forte (250 mg / 5 ml) [50 mg/ml]', mgPorMl: 50, esGotas: false },
+    ],
+    ibuprofeno: [
+      { id: 'jarabe100', nombre: 'Jarabe Infantil (100 mg / 5 ml) [20 mg/ml]', mgPorMl: 20, esGotas: false },
+      { id: 'jarabe200', nombre: 'Jarabe Forte (200 mg / 5 ml) [40 mg/ml]', mgPorMl: 40, esGotas: false },
+      { id: 'gotas40', nombre: 'Gotas Pediátricas (40 mg/ml)', mgPorMl: 40, esGotas: true },
+    ],
+  };
+
+  const listaPres = PRESENTACIONES[farmaco];
+  const presActual = listaPres.find(p => p.id === presentacion) || listaPres[0];
+
+  const pKg = Math.max(1, parseFloat(pesoKg) || 0);
+
+  // Paracetamol: 10 a 15 mg/kg cada 6-8h. Máx 60 mg/kg/día.
+  // Ibuprofeno: 5 a 10 mg/kg cada 8h. Máx 40 mg/kg/día. (>6 meses)
+  const calculo = useMemo(() => {
+    if (farmaco === 'paracetamol') {
+      const minMg = (pKg * 10).toFixed(1);
+      const recMg = (pKg * 12.5).toFixed(1);
+      const maxMg = (pKg * 15).toFixed(1);
+      const mlPorToma = (recMg / presActual.mgPorMl).toFixed(1);
+      const gotasPorToma = Math.round(recMg / (presActual.mgPorMl / 24)); // aprox 24 gotas = 1 ml
+      return {
+        rangoMg: `${minMg} - ${maxMg} mg`,
+        dosisSugeridaMg: recMg,
+        dosisMl: mlPorToma,
+        dosisGotas: gotasPorToma,
+        intervalo: 'Cada 6 a 8 horas (máximo 4 tomas al día)',
+        aviso: 'Dosis máxima segura: 60 mg/kg en 24 horas. Usar siempre jeringa graduada.',
+      };
+    } else {
+      const minMg = (pKg * 5).toFixed(1);
+      const recMg = (pKg * 7.5).toFixed(1);
+      const maxMg = (pKg * 10).toFixed(1);
+      const mlPorToma = (recMg / presActual.mgPorMl).toFixed(1);
+      const gotasPorToma = Math.round(recMg / (presActual.mgPorMl / 24));
+      return {
+        rangoMg: `${minMg} - ${maxMg} mg`,
+        dosisSugeridaMg: recMg,
+        dosisMl: mlPorToma,
+        dosisGotas: gotasPorToma,
+        intervalo: 'Cada 8 horas (máximo 3 tomas al día)',
+        aviso: '⚠️ Solo para niños mayores de 6 meses o más de 5 kg de peso. No usar si hay deshidratación severa sin supervisión médica.',
+      };
+    }
+  }, [farmaco, pKg, presActual]);
+
+  function aplicarARegistro() {
+    onTransferirDosis({
+      nombre: `${farmaco === 'paracetamol' ? 'Paracetamol' : 'Ibuprofeno'} (${presActual.nombre})`,
+      dosis: presActual.esGotas ? String(calculo.dosisGotas) : String(calculo.dosisMl),
+      unidad: presActual.esGotas ? 'gotas' : 'ml',
+      intervaloHoras: farmaco === 'paracetamol' ? 8 : 8,
+    });
+  }
+
   return (
     <div>
-      <h2 style={S.h2}>Historial completo</h2>
-      {registrosDelPerfil.map(r => (
-        <div key={r.id} style={{ position: 'relative' }}>
-          <RegistroCard registro={r} />
-          <button onClick={() => eliminarRegistro(r.id)} style={{
-            position: 'absolute', top: 12, right: 12, background: 'none', border: 'none',
-            color: COLORS.inkLight, fontSize: 12, cursor: 'pointer', textDecoration: 'underline',
-          }}>eliminar</button>
-        </div>
-      ))}
-      {registrosDelPerfil.length === 0 && <p style={{ fontSize: 13.5, color: COLORS.inkLight }}>No hay registros aún.</p>}
+      <div style={S.card}>
+        <h2 style={{ ...S.h2, fontSize: 17, marginBottom: 4 }}>
+          ⚖️ Calculadora Pediátrica de Dosis por Peso
+        </h2>
+        <p style={{ fontSize: 13, color: COLORS.inkLight, margin: '0 0 16px', lineHeight: 1.5 }}>
+          La dosis pediátrica exacta se calcula estrictamente por el <strong>peso real en kg</strong>, no por la edad.
+        </p>
 
-      {registrosDelPerfil.length >= 2 && (
-        <div style={{ marginTop: 24 }}>
-          <h2 style={S.h2}>Temperatura en el tiempo</h2>
-          <div style={S.card}>
-            <GraficaTemperatura registros={registrosDelPerfil} />
+        {/* Selector de Fármaco */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+          <button
+            style={{
+              ...S.btn,
+              flex: 1,
+              background: farmaco === 'paracetamol' ? COLORS.sage : COLORS.white,
+              color: farmaco === 'paracetamol' ? COLORS.white : COLORS.ink,
+              border: `1.5px solid ${COLORS.sage}`,
+            }}
+            onClick={() => { setFarmaco('paracetamol'); setPresentacion('jarabe120'); }}
+          >
+            🌡️ Paracetamol
+          </button>
+          <button
+            style={{
+              ...S.btn,
+              flex: 1,
+              background: farmaco === 'ibuprofeno' ? COLORS.sage : COLORS.white,
+              color: farmaco === 'ibuprofeno' ? COLORS.white : COLORS.ink,
+              border: `1.5px solid ${COLORS.sage}`,
+            }}
+            onClick={() => { setFarmaco('ibuprofeno'); setPresentacion('jarabe100'); }}
+          >
+            🔥 Ibuprofeno
+          </button>
+        </div>
+
+        {/* Input de Peso */}
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+            <label htmlFor="calc-peso" style={{ ...S.label, margin: 0 }}>Peso del niño/a (en kilogramos):</label>
+            <span style={{ fontSize: 15, fontWeight: 700, color: COLORS.sageDark }}>{pKg} kg</span>
+          </div>
+          <input
+            id="calc-peso"
+            type="number"
+            step="0.5"
+            min="2"
+            max="60"
+            style={{ ...S.input, fontSize: 16, fontWeight: 600 }}
+            value={pesoKg}
+            onChange={e => setPesoKg(e.target.value)}
+          />
+          <input
+            type="range"
+            min="3"
+            max="40"
+            step="0.5"
+            value={pKg}
+            onChange={e => setPesoKg(e.target.value)}
+            style={{ width: '100%', marginTop: 8, accentColor: COLORS.sage, cursor: 'pointer' }}
+            aria-label="Selector deslizante de peso en kg"
+          />
+        </div>
+
+        {/* Selector de Presentación Farmacéutica */}
+        <div style={{ marginBottom: 16 }}>
+          <label htmlFor="calc-pres" style={S.label}>Presentación comercial del envase:</label>
+          <select
+            id="calc-pres"
+            style={S.input}
+            value={presentacion}
+            onChange={e => setPresentacion(e.target.value)}
+          >
+            {listaPres.map(p => (
+              <option key={p.id} value={p.id}>{p.nombre}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Resultado Destacado */}
+        <div style={{
+          background: '#FFF4EE',
+          border: `2px solid ${COLORS.sageLight}`,
+          borderRadius: 14,
+          padding: 16,
+          marginBottom: 16,
+          textAlign: 'center'
+        }}>
+          <div style={{ fontSize: 12, color: COLORS.sageDark, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+            Dosis Recomendada por Toma
+          </div>
+          <div style={{ fontSize: 28, fontWeight: 800, color: COLORS.sageDark, margin: '6px 0' }}>
+            {presActual.esGotas ? `${calculo.dosisGotas} gotas` : `${calculo.dosisMl} ml`}
+          </div>
+          <div style={{ fontSize: 13, color: COLORS.ink, fontWeight: 600 }}>
+            Equivalente a ≈ {calculo.dosisSugeridaMg} mg ({calculo.rangoMg})
+          </div>
+          <div style={{ fontSize: 12, color: COLORS.inkLight, marginTop: 4 }}>
+            🕒 {calculo.intervalo}
           </div>
         </div>
-      )}
+
+        <div style={{
+          background: farmaco === 'ibuprofeno' ? COLORS.alertBg : '#F4F5F7',
+          borderLeft: `3px solid ${farmaco === 'ibuprofeno' ? COLORS.alert : COLORS.inkLight}`,
+          padding: '10px 12px',
+          borderRadius: 8,
+          marginBottom: 16,
+          fontSize: 12,
+          lineHeight: 1.4,
+          color: COLORS.ink
+        }}>
+          {calculo.aviso}
+        </div>
+
+        <button
+          style={{ ...S.btn, width: '100%', padding: '12px 16px' }}
+          onClick={aplicarARegistro}
+        >
+          📋 Registrar esta dosis en la bitácora de {perfilActivo?.nombre || 'paciente'}
+        </button>
+      </div>
     </div>
   );
 }
@@ -644,20 +1270,24 @@ function VistaHistorial({ registrosDelPerfil, eliminarRegistro }) {
 function VistaGuia() {
   return (
     <div>
-      <div style={{ ...S.card, background: '#F2F0E8', marginBottom: 18 }}>
-        <p style={{ fontSize: 12.5, color: COLORS.inkLight, margin: 0, lineHeight: 1.5 }}>
-          Esta guía es información educativa general (no personalizada y no generada por inteligencia artificial),
-          basada en lineamientos públicos de organismos de salud pediátrica. No sustituye la evaluación de un profesional.
+      <div style={{ ...S.card, background: '#F4F3EE', marginBottom: 14, borderLeft: `4px solid ${COLORS.terracotta}` }}>
+        <p style={{ fontSize: 13, color: COLORS.ink, margin: 0, lineHeight: 1.5 }}>
+          📖 <strong>Guía Pediátrica de Banderas Rojas:</strong> Diseñada con lineamientos de la Academia Americana de Pediatría (AAP) y guías clínicas para orientar a padres en situaciones críticas. No sustituye la evaluación médica presencial.
         </p>
       </div>
+
       {GUIA_EDUCATIVA.map((seccion, i) => (
         <div key={i} style={{
           ...S.card,
-          borderLeft: `4px solid ${seccion.nivel === 'alerta' ? COLORS.alert : seccion.nivel === 'observar' ? COLORS.terracotta : COLORS.sage}`,
+          borderLeft: `4px solid ${seccion.nivel === 'alerta' ? COLORS.alert : seccion.nivel === 'observar' ? COLORS.terracotta : COLORS.emerald}`,
         }}>
-          <h2 style={{ ...S.h2, fontSize: 15.5 }}>{seccion.titulo}</h2>
+          <h2 style={{ ...S.h2, fontSize: 15, color: seccion.nivel === 'alerta' ? COLORS.alert : COLORS.ink }}>
+            {seccion.titulo}
+          </h2>
           {seccion.items.map((item, j) => (
-            <p key={j} style={{ fontSize: 13.5, margin: '6px 0', color: COLORS.ink, lineHeight: 1.5 }}>• {item}</p>
+            <p key={j} style={{ fontSize: 13, margin: '6px 0', color: COLORS.ink, lineHeight: 1.5 }}>
+              • {item}
+            </p>
           ))}
         </div>
       ))}
@@ -669,21 +1299,26 @@ function VistaResumen({ perfilActivo, registrosDelPerfil, patrones }) {
   const [copiado, setCopiado] = useState(false);
 
   const textoResumen = useMemo(() => {
-    let texto = `Resumen de síntomas — ${perfilActivo.nombre}\n`;
-    texto += `Generado el ${new Date().toLocaleDateString('es-CL')}\n\n`;
+    const nombre = perfilActivo?.nombre || 'Paciente';
+    let texto = `📋 RESUMEN CLÍNICO PEDIÁTRICO — ${nombre}\n`;
+    texto += `Generado el ${new Date().toLocaleDateString('es-CL')} con HiDoctor\n`;
+    texto += `----------------------------------------\n\n`;
+
     if (patrones.length > 0) {
-      texto += 'Patrones observados:\n';
-      patrones.forEach(p => { texto += `- ${p.texto}\n`; });
-      texto += '\n';
+      texto += `PATRONES OBSERVADOS:\n`;
+      patrones.forEach(p => { texto += `• ${p.texto}\n`; });
+      texto += `\n`;
     }
-    texto += `Registros (${registrosDelPerfil.length}):\n`;
+
+    texto += `CRONOLOGÍA DE REGISTROS (${registrosDelPerfil.length}):\n`;
     registrosDelPerfil.slice().reverse().forEach(r => {
-      texto += `\n${formatFecha(r.fecha)}\n`;
-      if (r.sintomas && r.sintomas.length) texto += `  Síntomas: ${r.sintomas.join(', ')}\n`;
-      if (r.fiebre && r.temperatura) texto += `  Temperatura: ${r.temperatura}°C\n`;
-      if (r.nota) texto += `  Nota: ${r.nota}\n`;
-      if (r.medicamento) texto += `  Medicamento: ${r.medicamento.nombre} (${r.medicamento.dosis} ${r.medicamento.unidad})\n`;
+      texto += `\n📅 ${formatFecha(r.fecha)}\n`;
+      if (r.temperatura) texto += `   Temperatura: ${r.temperatura}°C\n`;
+      if (r.sintomas && r.sintomas.length) texto += `   Síntomas: ${r.sintomas.join(', ')}\n`;
+      if (r.medicamento) texto += `   Medicación: ${r.medicamento.nombre} (${r.medicamento.dosis} ${r.medicamento.unidad})\n`;
+      if (r.nota) texto += `   Nota: ${r.nota}\n`;
     });
+
     return texto;
   }, [perfilActivo, registrosDelPerfil, patrones]);
 
@@ -698,15 +1333,26 @@ function VistaResumen({ perfilActivo, registrosDelPerfil, patrones }) {
 
   return (
     <div>
-      <h2 style={S.h2}>Resumen para el doctor</h2>
+      <h2 style={S.h2}>Resumen para el Médico Pediatra</h2>
       <p style={{ fontSize: 13.5, color: COLORS.inkLight, marginBottom: 14 }}>
-        Copia este resumen y llévalo a la consulta de {perfilActivo.nombre}.
+        Coloca la pantalla de tu móvil en manos del pediatra en la consulta o copia el texto estructurado:
       </p>
-      <div style={{ ...S.card, whiteSpace: 'pre-wrap', fontSize: 13, fontFamily: 'Source Sans 3, sans-serif', lineHeight: 1.6, maxHeight: 360, overflowY: 'auto' }}>
+
+      <div style={{
+        ...S.card,
+        whiteSpace: 'pre-wrap',
+        fontSize: 12.5,
+        fontFamily: 'monospace',
+        background: '#FAF8F5',
+        lineHeight: 1.6,
+        maxHeight: 320,
+        overflowY: 'auto'
+      }}>
         {textoResumen}
       </div>
-      <button style={{ ...S.btnTerracotta, width: '100%', marginTop: 12 }} onClick={copiar}>
-        {copiado ? 'Copiado ✓' : 'Copiar resumen'}
+
+      <button style={{ ...S.btnTerracotta, width: '100%', marginTop: 8 }} onClick={copiar}>
+        {copiado ? '✓ ¡Resumen Copiado al Portapapeles!' : '📋 Copiar Resumen para WhatsApp o Pediatra'}
       </button>
     </div>
   );
@@ -758,12 +1404,12 @@ function VistaAyuda({ contactos, agregarContacto, eliminarContacto, paisSeleccio
             setBuscandoCercanas(false);
           })
           .catch(() => {
-            setErrorUbicacion('No se pudieron obtener resultados. Verifica tu conexión a internet.');
+            setErrorUbicacion('No se pudieron obtener resultados geodésicos en este momento.');
             setBuscandoCercanas(false);
           });
       },
       () => {
-        setErrorUbicacion('No se pudo acceder a tu ubicación. Activa el GPS o los permisos de ubicación e intenta de nuevo.');
+        setErrorUbicacion('No se pudo acceder a tu ubicación GPS. Revisa los permisos de ubicación en tu navegador.');
         setBuscandoCercanas(false);
       },
       { enableHighAccuracy: true, timeout: 15000 }
@@ -773,18 +1419,22 @@ function VistaAyuda({ contactos, agregarContacto, eliminarContacto, paisSeleccio
   return (
     <div>
       {/* Mensaje tranquilizador */}
-      <div style={{ ...S.card, background: '#EEF3EE', borderLeft: `4px solid ${COLORS.sage}`, marginBottom: 18 }}>
-        <p style={{ fontSize: 14.5, color: COLORS.ink, margin: 0, lineHeight: 1.7 }}>
-          💚 <strong>Respira profundo.</strong> Estás haciendo lo correcto al buscar ayuda para tu hijo.
-          Aquí tienes los números y contactos que puedes necesitar. Todo va a estar bien.
+      <div style={{ ...S.card, background: '#EEF3EE', borderLeft: `4px solid ${COLORS.emerald}`, marginBottom: 16 }}>
+        <p style={{ fontSize: 13.5, color: COLORS.ink, margin: 0, lineHeight: 1.6 }}>
+          💚 <strong>Respira hondo y mantén la calma.</strong> Aquí tienes los números oficiales de urgencia médica y tus contactos pediátricos directos.
         </p>
       </div>
 
-      {/* Números de emergencia */}
-      <h2 style={S.h2}>Números de emergencia</h2>
+      {/* Selector de país */}
+      <h2 style={S.h2}>Directorio de Urgencias Multipaís</h2>
       <div style={{ marginBottom: 14 }}>
-        <label style={S.label}>Selecciona tu país</label>
-        <select style={S.input} value={paisSeleccionado} onChange={e => setPaisSeleccionado(e.target.value)}>
+        <label htmlFor="sel-pais" style={S.label}>Selecciona tu país:</label>
+        <select
+          id="sel-pais"
+          style={S.input}
+          value={paisSeleccionado}
+          onChange={e => setPaisSeleccionado(e.target.value)}
+        >
           {Object.keys(NUMEROS_EMERGENCIA).map(p => (
             <option key={p} value={p}>{p}</option>
           ))}
@@ -792,69 +1442,60 @@ function VistaAyuda({ contactos, agregarContacto, eliminarContacto, paisSeleccio
       </div>
 
       {numerosActuales.map((n, i) => (
-        <a key={i} href={`tel:${n.numero}`} style={{
-          display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10,
-          ...S.card, textDecoration: 'none', color: COLORS.ink, cursor: 'pointer',
-          background: n.tipo === 'emergencia' ? COLORS.alertBg : COLORS.white,
-          borderLeft: n.tipo === 'emergencia' ? `4px solid ${COLORS.alert}` : `4px solid ${COLORS.sage}`,
-        }}>
-          <div style={{ fontSize: 22 }}>{n.tipo === 'emergencia' ? '🚨' : '📞'}</div>
+        <a
+          key={i}
+          href={`tel:${n.numero}`}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10,
+            ...S.card, textDecoration: 'none', color: COLORS.ink,
+            background: n.tipo === 'emergencia' ? COLORS.alertBg : COLORS.white,
+            borderLeft: n.tipo === 'emergencia' ? `4px solid ${COLORS.alert}` : `4px solid ${COLORS.emerald}`,
+          }}
+          aria-label={`Llamar a ${n.nombre}`}
+        >
+          <div style={{ fontSize: 24 }}>{n.tipo === 'emergencia' ? '🚨' : '📞'}</div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 600, fontSize: 14.5 }}>{n.nombre}</div>
-            <div style={{ fontSize: 14, color: COLORS.inkLight, fontWeight: 500 }}>{n.display}</div>
+            <div style={{ fontWeight: 700, fontSize: 14.5 }}>{n.nombre}</div>
+            <div style={{ fontSize: 13.5, color: COLORS.inkLight, fontWeight: 600 }}>{n.display}</div>
           </div>
           <div style={{ ...S.btnTerracotta, padding: '7px 14px', fontSize: 13, borderRadius: 8 }}>Llamar</div>
         </a>
       ))}
 
       {/* Mis contactos guardados */}
-      <h2 style={{ ...S.h2, marginTop: 28 }}>Mis contactos guardados</h2>
-      <p style={{ fontSize: 13.5, color: COLORS.inkLight, marginBottom: 14, marginTop: 0 }}>
-        Guarda los datos de tu pediatra, clínica o farmacia de confianza para tenerlos siempre a mano.
-      </p>
-
+      <h2 style={{ ...S.h2, marginTop: 24 }}>Contactos Pediátricos Guardados</h2>
       {contactos.map(c => (
         <div key={c.id} style={S.card}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div style={{ flex: 1 }}>
-              <span style={{
-                fontSize: 11, color: COLORS.sageDark, fontWeight: 600,
-                textTransform: 'uppercase', letterSpacing: 0.5,
-              }}>
+              <span style={{ fontSize: 11, color: COLORS.sageDark, fontWeight: 700, textTransform: 'uppercase' }}>
                 {TIPOS_CONTACTO[c.tipo] || TIPOS_CONTACTO.otro}
               </span>
-              <div style={{ fontWeight: 600, fontSize: 15, marginTop: 2 }}>{c.nombre}</div>
-              {c.telefono && (
-                <div style={{ fontSize: 13.5, color: COLORS.inkLight, marginTop: 4 }}>📞 {c.telefono}</div>
-              )}
-              {c.direccion && (
-                <div style={{ fontSize: 13.5, color: COLORS.inkLight, marginTop: 2 }}>📍 {c.direccion}</div>
-              )}
-              {c.nota && (
-                <div style={{ fontSize: 13, color: COLORS.inkLight, marginTop: 4, fontStyle: 'italic' }}>{c.nota}</div>
-              )}
+              <div style={{ fontWeight: 700, fontSize: 14.5, marginTop: 2 }}>{c.nombre}</div>
+              {c.telefono && <div style={{ fontSize: 13, color: COLORS.inkLight, marginTop: 2 }}>📞 {c.telefono}</div>}
+              {c.direccion && <div style={{ fontSize: 12.5, color: COLORS.inkLight, marginTop: 2 }}>📍 {c.direccion}</div>}
+              {c.nota && <div style={{ fontSize: 12, color: COLORS.inkLight, marginTop: 2, fontStyle: 'italic' }}>{c.nota}</div>}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginLeft: 8 }}>
               {c.telefono && (
-                <a href={`tel:${c.telefono}`} style={{
-                  ...S.btn, padding: '6px 12px', fontSize: 12,
-                  textDecoration: 'none', textAlign: 'center',
-                }}>
+                <a href={`tel:${c.telefono}`} style={{ ...S.btn, padding: '6px 12px', fontSize: 12, textDecoration: 'none' }}>
                   Llamar
                 </a>
               )}
-              <button onClick={() => eliminarContacto(c.id)} style={{
-                background: 'none', border: 'none', color: COLORS.inkLight,
-                fontSize: 11.5, cursor: 'pointer', textDecoration: 'underline', padding: 0,
-              }}>eliminar</button>
+              <button
+                onClick={() => eliminarContacto(c.id)}
+                style={{ background: 'none', border: 'none', color: COLORS.inkLight, fontSize: 11, cursor: 'pointer', textDecoration: 'underline' }}
+              >
+                eliminar
+              </button>
             </div>
           </div>
         </div>
       ))}
 
       {!mostrarFormContacto ? (
-        <button style={{ ...S.btnOutline, width: '100%' }} onClick={() => setMostrarFormContacto(true)}>
-          + Agregar contacto
+        <button style={{ ...S.btnOutline, width: '100%', marginBottom: 20 }} onClick={() => setMostrarFormContacto(true)}>
+          + Agregar Nuevo Contacto
         </button>
       ) : (
         <ContactoForm
@@ -864,51 +1505,33 @@ function VistaAyuda({ contactos, agregarContacto, eliminarContacto, paisSeleccio
       )}
 
       {/* Centros de salud cercanos */}
-      <h2 style={{ ...S.h2, marginTop: 28 }}>Centros de salud cercanos</h2>
-      <p style={{ fontSize: 13.5, color: COLORS.inkLight, marginBottom: 14, marginTop: 0 }}>
-        Busca hospitales, clínicas y farmacias cerca de tu ubicación actual.
-      </p>
+      <h2 style={{ ...S.h2, marginTop: 20 }}>Centros de Salud Cercanos (GPS)</h2>
       <button
         style={{ ...S.btn, width: '100%', opacity: buscandoCercanas ? 0.7 : 1 }}
         onClick={buscarCercanos}
         disabled={buscandoCercanas}
       >
-        {buscandoCercanas ? '⏳ Buscando…' : '📍 Buscar centros de salud cercanos'}
+        {buscandoCercanas ? '⏳ Buscando centros de urgencia…' : '📍 Localizar Hospitales y Farmacias Cercanos'}
       </button>
 
       {errorUbicacion && (
         <div style={{ ...S.card, background: COLORS.alertBg, borderLeft: `4px solid ${COLORS.alert}`, marginTop: 12 }}>
-          <p style={{ fontSize: 13.5, color: COLORS.ink, margin: 0 }}>{errorUbicacion}</p>
+          <p style={{ fontSize: 13, color: COLORS.ink, margin: 0 }}>{errorUbicacion}</p>
         </div>
       )}
 
       {clinicasCercanas.length > 0 && (
-        <div style={{ marginTop: 14 }}>
-          <p style={{ fontSize: 12.5, color: COLORS.inkLight, marginBottom: 10 }}>
-            Se encontraron {clinicasCercanas.length} resultados en un radio de 5 km:
-          </p>
+        <div style={{ marginTop: 12 }}>
           {clinicasCercanas.map((c, i) => (
             <div key={i} style={S.card}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div style={{ flex: 1 }}>
-                  <span style={{ fontSize: 11, color: COLORS.sageDark, fontWeight: 600 }}>
-                    {TIPOS_LUGAR[c.tipo] || '🏥 Centro de salud'}
-                  </span>
-                  <div style={{ fontWeight: 600, fontSize: 14, marginTop: 2 }}>{c.nombre}</div>
-                  {c.direccion && (
-                    <div style={{ fontSize: 13, color: COLORS.inkLight, marginTop: 3 }}>📍 {c.direccion}</div>
-                  )}
-                  <div style={{ fontSize: 12.5, color: COLORS.sage, fontWeight: 500, marginTop: 3 }}>
-                    {c.distancia < 1 ? `${(c.distancia * 1000).toFixed(0)} m` : `${c.distancia.toFixed(1)} km`}
-                  </div>
-                </div>
+              <div style={{ fontWeight: 700, fontSize: 14 }}>{c.nombre}</div>
+              <div style={{ fontSize: 12, color: COLORS.sageDark, fontWeight: 600 }}>
+                {TIPOS_LUGAR[c.tipo] || '🏥 Centro de salud'} · {c.distancia < 1 ? `${(c.distancia * 1000).toFixed(0)} m` : `${c.distancia.toFixed(1)} km`}
               </div>
-              <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+              {c.direccion && <div style={{ fontSize: 12.5, color: COLORS.inkLight, marginTop: 2 }}>📍 {c.direccion}</div>}
+              <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                 {c.telefono && (
-                  <a href={`tel:${c.telefono}`} style={{
-                    ...S.btn, padding: '6px 14px', fontSize: 12.5,
-                    textDecoration: 'none', flex: 1, textAlign: 'center',
-                  }}>
+                  <a href={`tel:${c.telefono}`} style={{ ...S.btn, padding: '6px 12px', fontSize: 12, textDecoration: 'none', flex: 1, textAlign: 'center' }}>
                     📞 Llamar
                   </a>
                 )}
@@ -916,10 +1539,7 @@ function VistaAyuda({ contactos, agregarContacto, eliminarContacto, paisSeleccio
                   href={`https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lon}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{
-                    ...S.btnOutline, padding: '6px 14px', fontSize: 12.5,
-                    textDecoration: 'none', flex: 1, textAlign: 'center',
-                  }}
+                  style={{ ...S.btnOutline, padding: '6px 12px', fontSize: 12, textDecoration: 'none', flex: 1, textAlign: 'center' }}
                 >
                   🗺️ Cómo llegar
                 </a>
@@ -951,45 +1571,41 @@ function ContactoForm({ onGuardar, onCancelar }) {
   }
 
   return (
-    <div style={S.card}>
-      <h2 style={{ ...S.h2, fontSize: 16 }}>Nuevo contacto</h2>
-      <div style={{ marginBottom: 10 }}>
-        <label style={S.label}>Tipo</label>
-        <select style={S.input} value={tipo} onChange={e => setTipo(e.target.value)}>
+    <div style={{ ...S.card, marginBottom: 20 }}>
+      <h3 style={{ ...S.h2, fontSize: 15 }}>Nuevo Contacto Médico</h3>
+      <div style={{ marginBottom: 8 }}>
+        <label htmlFor="c-tipo" style={S.label}>Tipo de contacto</label>
+        <select id="c-tipo" style={S.input} value={tipo} onChange={e => setTipo(e.target.value)}>
           {Object.entries(TIPOS_CONTACTO).map(([k, v]) => (
             <option key={k} value={k}>{v}</option>
           ))}
         </select>
       </div>
-      <div style={{ marginBottom: 10 }}>
-        <label style={S.label}>Nombre</label>
-        <input style={S.input} value={nombre} onChange={e => setNombre(e.target.value)}
-          placeholder="Ej. Dra. María López" />
+      <div style={{ marginBottom: 8 }}>
+        <label htmlFor="c-nombre" style={S.label}>Nombre completo o institución</label>
+        <input id="c-nombre" style={S.input} value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Ej. Dr. Carlos Ruiz" />
       </div>
-      <div style={{ marginBottom: 10 }}>
-        <label style={S.label}>Teléfono</label>
-        <input style={S.input} type="tel" value={telefono} onChange={e => setTelefono(e.target.value)}
-          placeholder="Ej. +56 9 1234 5678" />
+      <div style={{ marginBottom: 8 }}>
+        <label htmlFor="c-tel" style={S.label}>Teléfono de contacto</label>
+        <input id="c-tel" style={S.input} type="tel" value={telefono} onChange={e => setTelefono(e.target.value)} placeholder="Ej. +56 9 1234 5678" />
       </div>
-      <div style={{ marginBottom: 10 }}>
-        <label style={S.label}>Dirección (opcional)</label>
-        <input style={S.input} value={direccion} onChange={e => setDireccion(e.target.value)}
-          placeholder="Ej. Av. Providencia 1234" />
+      <div style={{ marginBottom: 8 }}>
+        <label htmlFor="c-dir" style={S.label}>Dirección (opcional)</label>
+        <input id="c-dir" style={S.input} value={direccion} onChange={e => setDireccion(e.target.value)} placeholder="Ej. Av. Providencia 1234" />
       </div>
-      <div style={{ marginBottom: 10 }}>
-        <label style={S.label}>Nota (opcional)</label>
-        <input style={S.input} value={nota} onChange={e => setNota(e.target.value)}
-          placeholder="Ej. Atiende lunes a viernes" />
+      <div style={{ marginBottom: 12 }}>
+        <label htmlFor="c-nota" style={S.label}>Nota u horario (opcional)</label>
+        <input id="c-nota" style={S.input} value={nota} onChange={e => setNota(e.target.value)} placeholder="Ej. Horario de urgencias" />
       </div>
       <div style={{ display: 'flex', gap: 8 }}>
-        <button style={{ ...S.btn, flex: 1 }} onClick={guardar}>Guardar contacto</button>
+        <button style={{ ...S.btn, flex: 1 }} onClick={guardar} disabled={!nombre.trim()}>Guardar</button>
         <button style={{ ...S.btnOutline, flex: 1 }} onClick={onCancelar}>Cancelar</button>
       </div>
     </div>
   );
 }
 
-// ---------- Asistente IA Pediátrico & Triaje Inteligente ----------
+// ---------- Asistente Doctor IA Pediátrico & Triaje Clínico Dual ----------
 function generarRespuestaOffline(pregunta, perfilActivo, registrosDelPerfil, patrones) {
   const p = (pregunta || '').toLowerCase();
   const nombre = perfilActivo?.nombre || 'el niño/a';
@@ -1002,112 +1618,18 @@ function generarRespuestaOffline(pregunta, perfilActivo, registrosDelPerfil, pat
 
   if (p.includes('respir') || p.includes('silb') || p.includes('ahog') || p.includes('tiraje') || p.includes('pecho')) {
     esAlerta = true;
-    respuesta = `🚨 **ATENCIÓN INMEDIATA — SIGNOS RESPIRATORIOS CRÍTICOS**
-
-Si notas que **${nombre}** presenta:
-- Hundimiento de costillas o el hueco del cuello al respirar (tiraje).
-- Respiración agitada, muy rápida o jadeante.
-- Silbidos audibles en el pecho (sibilancias) o estridor al inhalar.
-- Color azulado o grisáceo alrededor de los labios o uñas.
-
-👉 **ACUDE A URGENCIAS DE INMEDIATO o llama al servicio de emergencias de tu país (pestaña 🆘 Ayuda).**
-Mantén a ${nombre} en posición sentada o semisentada, no le des líquidos a la fuerza si le cuesta respirar y acude al centro asistencial más cercano.`;
+    respuesta = `🚨 ATENCIÓN INMEDIATA — SIGNOS RESPIRATORIOS CRÍTICOS\n\nSi notas que ${nombre} presenta:\n• Hundimiento de costillas o hueco de la garganta al respirar (tiraje).\n• Respiración agitada, muy rápida o silbidos en el pecho.\n• Color azulado o pálido en labios o uñas.\n\n👉 ACUDE DE INMEDIATO A URGENCIAS o llama al servicio de emergencias de tu país (Pestaña 🆘 Ayuda).`;
   } else if (p.includes('fiebre') || p.includes('temperatura') || p.includes('calentur') || p.includes('38') || p.includes('39') || p.includes('40')) {
-    const tempTexto = ultimaTemp ? ` (Último registro de ${nombre}: ${ultimaTemp}°C)` : '';
+    const tempTexto = ultimaTemp ? ` (Última temperatura de ${nombre}: ${ultimaTemp}°C)` : '';
     if (parseFloat(ultimaTemp || 0) >= 39.5 || p.includes('40')) esAlerta = true;
 
-    respuesta = `🌡️ **Manejo Seguro de Fiebre en Niños**${tempTexto}
-
-La fiebre es un mecanismo de defensa natural del cuerpo contra infecciones:
-1. **Medidas de Confort Físico:**
-   - Viste a ${nombre} con ropa ligera de algodón, mantén la habitación ventilada y a temperatura templada (~21-22°C).
-   - **No uses baños con agua fría ni alcohol**: provocan escalofríos y vasoconstricción, lo que puede elevar más la temperatura interna.
-   - Ofrece líquidos con frecuencia (leche materna, agua o suero de rehidratación en pequeños sorbos).
-2. **Medicación Antitérmica:**
-   - La dosis de paracetamol o ibuprofeno se calcula **estrictamente por el peso en kg**, no por la edad. Revisa la indicación de su pediatra.
-3. **🚨 ¿Cuándo acudir a Urgencias?**
-   - Bebés menores de 3 meses con temperatura de 38°C o más.
-   - Fiebre de 40°C o más persistente.
-   - Si se acompaña de manchas rojas/púrpuras en la piel, rigidez de nuca, vómitos reiterados o somnolencia extrema sin respuesta.
-   - Fiebre continua por más de 72 horas.`;
-  } else if (p.includes('vomit') || p.includes('diarrea') || p.includes('deshidrat') || p.includes('suero') || p.includes('panza') || p.includes('estomago')) {
-    respuesta = `💧 **Prevención de Deshidratación & Trastornos Gastrointestinales**
-
-Para **${nombre}**, la prioridad número 1 es reponer líquidos y electrolitos:
-1. **Regla de Oro: Hidratación Fraccionada:**
-   - Ofrece **Solución de Rehidratación Oral (SRO)** en pequeños volúmenes: 1 cucharadita (5 ml) cada 5 a 10 minutos.
-   - Beber grandes volúmenes de golpe puede reactivar el reflejo del vómito.
-2. **Evitar:**
-   - Bebidas azucaradas, jugos industriales, refrescos o bebidas isotónicas para deportistas (empeoran la diarrea osmótica).
-3. **🚨 Banderas Rojas de Deshidratación Severa:**
-   - Llanto sin lágrimas.
-   - Boca, lengua y labios muy secos.
-   - Más de 6 a 8 horas sin mojar el pañal u orina muy concentrada y oscura.
-   - Ojos hundidos o fontanela (mollera) deprimida en lactantes.
-   - Decaimiento extremo o falta de energía para sostener la mirada.
-Si detectas estos signos, consulta en un centro médico sin demora.`;
-  } else if (p.includes('tos') || p.includes('moco') || p.includes('resfri') || p.includes('congestion') || p.includes('garganta')) {
-    respuesta = `💨 **Alivio de Congestión y Cuadros Respiratorios Altos**
-
-Recomendaciones para el confort de **${nombre}**:
-1. **Higiene Nasal:**
-   - Realiza lavados nasales suaves con suero fisiológico (solución salina al 0.9%) antes de comer y antes de dormir para despejar las vías respiratorias.
-2. **Posición de Descanso:**
-   - Eleva ligeramente la cabecera del colchón (unos 15-20 grados) colocando una toalla debajo del colchón (nunca almohadas altas dentro de la cuna en bebés).
-3. **Ambiente:**
-   - Mantén el aire humectado y libre de humo de tabaco o químicos de limpieza.
-4. **⚠️ Precaución con Medicamentos:**
-   - No administres jarabes antitusivos ni descongestionantes de venta libre a menores de 6 años sin indicación médica explícita.
-5. **🚨 Consulta de Inmediato si:**
-   - La tos suena como ladrido o foca (posible laringitis/crup).
-   - Aparece dificultad respiratoria o quejido continuo.`;
-  } else if (p.includes('erupcion') || p.includes('mancha') || p.includes('piel') || p.includes('roncha') || p.includes('granit')) {
-    respuesta = `🔍 **Erupciones Cutáneas y Manchas en la Piel**
-
-1. **La Prueba del Vaso (Vitropresión):**
-   - Presiona suavemente el fondo de un vaso de vidrio transparente contra la mancha o erupción.
-   - **Normal:** Si la mancha desaparece temporalmente bajo la presión y luego vuelve, suele ser un exantema benigno.
-   - **🚨 ALERTA ROJA:** Si la mancha **NO desaparece al presionar** (petequias/púrpura) y además hay fiebre o decaimiento, acude de inmediato a urgencias.
-2. **Cuidados Generales:**
-   - Ropa holgada de algodón que no roce la piel.
-   - Baños templados cortos sin frotar con esponjas.
-   - Registra en HiDoctor la evolución de las zonas donde aparece la erupción para mostrárselo al pediatra.`;
-  } else if (p.includes('dosis') || p.includes('paracetamol') || p.includes('ibuprofeno') || p.includes('medicamento') || p.includes('remedio') || p.includes('jarabe')) {
-    respuesta = `💊 **Guía de Seguridad en Medicación Pediátrica**
-
-1. **La Dosis Siempre Depende del Peso:**
-   - En pediatría las dosis se calculan por **miligramos por kilogramo de peso real (mg/kg)**, jamás únicamente por la edad.
-2. **Verificación de Seguridad:**
-   - Utiliza siempre la jeringa dosificadora o pipeta graduada del medicamento, nunca cucharas domésticas.
-   - Guarda el registro exacto aquí en HiDoctor (pestaña **Registrar**) para saber con exactitud la hora de la última toma y evitar sobredosificaciones accidentales.
-3. **⚠️ Intervalos Mínimos:**
-   - Respeta estrictamente el intervalo fijado por tu pediatra (habitualmente cada 6 u 8 horas). No alternes fármacos sin autorización médica expresa.`;
-  } else if (p.includes('urgencia') || p.includes('emergencia') || p.includes('hospital') || p.includes('alarma')) {
-    esAlerta = true;
-    respuesta = `🚨 **LOS 7 SIGNOS DE ALARMA PEDIÁTRICA OBLIGATORIOS DE CONSULTA URGENTE:**
-
-1. **Dificultad respiratoria evidente:** Aleteo nasal, hundimiento de costillas o respiración acelerada.
-2. **Color de la piel:** Labios o lengua azulados, piel muy pálida o moteada.
-3. **Estado neurológico:** Imposibilidad para despertar, letargo profundo, confusión o convulsiones.
-4. **Fiebre alta en lactantes:** Menores de 3 meses con más de 38°C.
-5. **Erupciones tipo petequias:** Manchas rojas que no desaparecen al presionar con un vaso de vidrio.
-6. **Vómitos incesantes:** Imposibilidad total de retener líquidos durante más de 4 horas.
-7. **Llanto inconsolable o dolor agudo e inusual.**
-
-👉 Utiliza la pestaña **🆘 Ayuda** para llamar directamente a ambulancia SAMU/911 o localizar el hospital más cercano.`;
+    respuesta = `🌡️ Manejo Seguro de la Fiebre Pediátrica${tempTexto}\n\n1. Medidas de confort:\n• Viste a ${nombre} con ropa ligera de algodón.\n• No uses baños de agua fría ni alcohol (provocan temblores y vasoconstricción).\n• Ofrece líquidos con frecuencia en pequeños sorbos.\n2. Dosis por Peso:\n• El paracetamol e ibuprofeno se calculan por los kg de peso (revisa la pestaña 💊 Dosis).\n3. 🚨 Acude a Urgencias si:\n• Bebé menor de 3 meses con 38°C o más.\n• Fiebre que no cede tras 72 horas o manchas que no desaparecen al presionar con un vaso.`;
+  } else if (p.includes('vomit') || p.includes('diarrea') || p.includes('deshidrat') || p.includes('suero')) {
+    respuesta = `💧 Hidratación y Control Gastrointestinal\n\nPara ${nombre}, la prioridad es evitar la deshidratación:\n1. Ofrece Solución de Rehidratación Oral (SRO) en pequeñas dosis: 1 cucharadita (5 ml) cada 5-10 minutos.\n2. Evita jugos industriales o gaseosas.\n3. 🚨 Banderas Rojas:\n• Llanto sin lágrimas.\n• Boca y lengua secas.\n• Más de 6-8 horas sin mojar el pañal u orina muy oscura.`;
+  } else if (p.includes('dosis') || p.includes('paracetamol') || p.includes('ibuprofeno') || p.includes('jarabe')) {
+    respuesta = `💊 Dosificación Pediátrica Segura\n\nEn pediatría, las dosis dependen estrictamente del peso real del niño en kilogramos, nunca de la edad.\n\nPuedes calcular los mililitros exactos para ${nombre} en nuestra pestaña 💊 Dosis con las presentaciones comerciales de gotas y jarabe.`;
   } else {
-    respuesta = `📋 **Recomendaciones de Acompañamiento para ${nombre}**
-
-He revisado los antecedentes disponibles en su bitácora:
-${sintomasRecientes.length > 0 ? `• Síntomas recientes reportados: **${sintomasRecientes.join(', ')}**` : '• No hay síntomas recientes reportados en las últimas horas.'}
-${ultimaTemp ? `• Última temperatura corporal registrada: **${ultimaTemp}°C**` : ''}
-${(patrones && patrones.length > 0) ? `• Patrones de salud identificados: **${patrones.map(pat => pat.texto).join('; ')}**\n` : ''}
-**Pasos a seguir recomendados:**
-1. Mantén a ${nombre} bien hidratado y en reposo confortable.
-2. Continúa anotando en HiDoctor cualquier cambio de temperatura o síntoma nuevo (la cronología es la herramienta más valiosa para el médico).
-3. Si el cuadro no mejora en 48-72 horas o aparecen banderas rojas (dificultad respiratoria, decaimiento extremo, vómitos continuos), consulta presencialmente con tu pediatra.
-
-¿Deseas orientación sobre algún síntoma específico como **fiebre, tos, vómitos o pautas de urgencia**?`;
+    respuesta = `📋 Orientación Pediátrica para ${nombre}\n\nAntecedentes en su bitácora:\n${sintomasRecientes.length > 0 ? `• Síntomas recientes: ${sintomasRecientes.join(', ')}` : '• Sin síntomas graves registrados.'}\n${ultimaTemp ? `• Última temperatura: ${ultimaTemp}°C` : ''}\n${patrones.length > 0 ? `• Patrones detectados: ${patrones.map(pat => pat.texto).join('; ')}\n` : ''}\nRecomendaciones:\n1. Mantén a ${nombre} hidratado y en reposo cómodo.\n2. Continúa registrando la evolución en HiDoctor para que el médico tenga la cronología exacta.\n3. Si notas dificultad para respirar, letargo o fiebre alta continua, acude a urgencias.`;
   }
 
   return { texto: respuesta, esAlerta };
@@ -1118,11 +1640,7 @@ function VistaAsistenteIA({ perfilActivo, registrosDelPerfil, patrones }) {
     {
       id: 'init-1',
       emisor: 'asistente',
-      texto: `👋 ¡Hola! Soy tu **Doctor IA**, asistente de orientación pediátrica de **HiDoctor**.
-
-Estoy aquí para ayudarte a interpretar síntomas, reconocer señales de alarma y cuidar a **${perfilActivo?.nombre || 'tu hijo/a'}** mientras consultas a su pediatra.
-
-¿Qué síntomas estás observando o sobre qué necesitas orientación?`,
+      texto: `👋 ¡Hola! Soy tu Doctor IA, asistente de triaje pediátrico de HiDoctor.\n\nEstoy aquí para orientarte ante síntomas de ${perfilActivo?.nombre || 'tu hijo/a'}, identificar señales de alarma y preparar la consulta médica.\n\n¿Qué síntomas observas en este momento?`,
       hora: new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }),
       esAlerta: false,
     }
@@ -1130,7 +1648,9 @@ Estoy aquí para ayudarte a interpretar síntomas, reconocer señales de alarma 
   const [inputTexto, setInputTexto] = useState('');
   const [cargando, setCargando] = useState(false);
   const [mostrarConfigKey, setMostrarConfigKey] = useState(false);
-  const [customKey, setCustomKey] = useState(() => window.localStorage.getItem('hidoctor_gemini_api_key') || '');
+  const [customKey, setCustomKey] = useState(() => {
+    try { return window.localStorage.getItem('hidoctor_gemini_api_key') || ''; } catch { return ''; }
+  });
   const mensajesEndRef = useRef(null);
 
   useEffect(() => {
@@ -1164,26 +1684,21 @@ Estoy aquí para ayudarte a interpretar síntomas, reconocer señales de alarma 
 
     const apiKey = customKey.trim() || import.meta.env.VITE_GEMINI_API_KEY || '';
 
-    // Intentar llamada a Gemini si existe key con timeout estricto de 8000ms
+    // Intento con Gemini API (timeout estricto 8.000 ms per standard)
     if (apiKey) {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 8000);
 
       try {
-        const promptSistema = `Eres el Asistente Pediátrico de la aplicación HiDoctor.
-Tu objetivo es dar orientación preventiva, empática y rigurosa a los padres.
-Paciente activo: ${perfilActivo?.nombre || 'Niño/a'}.
-Última temperatura: ${ultimaTemp ? ultimaTemp + '°C' : 'No registrada'}.
-Síntomas recientes: ${ultimosSintomas.join(', ') || 'Ninguno registrado'}.
-Patrones observados: ${patrones.map(p => p.texto).join('; ') || 'Ninguno'}.
-
-INSTRUCCIONES CLÍNICAS OBLIGATORIAS:
-1. Responde en español claro, cálido y comprensible.
-2. Comienza evaluando si la consulta involucra una potencial emergencia médica.
-3. Si hay signos de peligro (dificultad respiratoria, somnolencia extrema, fiebre >40°C, petequias, menor de 3 meses con fiebre), indícalo en el primer párrafo en MAYÚSCULAS y aconseja ir a urgencias.
-4. Ofrece medidas de soporte en el hogar (hidratación, ropa ligera, confort).
-5. Enfatiza que este asistente orienta y no sustituye al pediatra.
-Mantén la respuesta menor a 220 palabras.`;
+        const promptSistema = `Eres el Asistente Pediátrico de HiDoctor.
+Paciente: ${perfilActivo?.nombre || 'Niño/a'}, peso: ${perfilActivo?.pesoKg || 14} kg.
+Última temperatura: ${ultimaTemp ? ultimaTemp + '°C' : 'Sin registro'}.
+Síntomas: ${ultimosSintomas.join(', ') || 'Ninguno reciente'}.
+Patrones: ${patrones.map(p => p.texto).join('; ') || 'Ninguno'}.
+Instrucciones:
+1. Responde en español empático, claro y breve (<200 palabras).
+2. Si hay signos de riesgo vital (dificultad respiratoria, somnolencia extrema, fiebre >40°C, manchas rojas fijas), indícalo en el primer párrafo en MAYÚSCULAS y aconseja urgencias.
+3. Este asistente orienta pero no reemplaza la atención médica.`;
 
         const response = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
@@ -1192,12 +1707,7 @@ Mantén la respuesta menor a 220 palabras.`;
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               contents: [
-                {
-                  parts: [
-                    { text: promptSistema },
-                    { text: `Pregunta de los padres: ${consulta}` }
-                  ]
-                }
+                { parts: [{ text: promptSistema }, { text: `Consulta de los padres: ${consulta}` }] }
               ]
             }),
             signal: controller.signal,
@@ -1225,11 +1735,11 @@ Mantén la respuesta menor a 220 palabras.`;
           }
         }
       } catch {
-        // Fallback silencioso por timeout o error de conexión
+        // Fallback inmediato a simulación guiada
       }
     }
 
-    // Fallback inmediato a simulación guiada de triaje clínico
+    // Fallback autónomo offline de triaje
     setTimeout(() => {
       const { texto: respuestaOffline, esAlerta } = generarRespuestaOffline(
         consulta,
@@ -1249,12 +1759,12 @@ Mantén la respuesta menor a 220 palabras.`;
         }
       ]);
       setCargando(false);
-    }, 450);
+    }, 400);
   }
 
   function guardarApiKey(key) {
     setCustomKey(key);
-    window.localStorage.setItem('hidoctor_gemini_api_key', key);
+    try { window.localStorage.setItem('hidoctor_gemini_api_key', key); } catch {}
     setMostrarConfigKey(false);
   }
 
@@ -1268,26 +1778,27 @@ Mantén la respuesta menor a 220 palabras.`;
 
   return (
     <div>
-      {/* Encabezado y Contexto */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
         <h2 style={{ ...S.h2, margin: 0 }}>🤖 Doctor IA — Triaje & Soporte</h2>
         <button
           onClick={() => setMostrarConfigKey(!mostrarConfigKey)}
           style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18 }}
           title="Configurar Gemini API Key"
+          aria-label="Configuración de clave API de Gemini"
         >
           ⚙️
         </button>
       </div>
 
       {mostrarConfigKey && (
-        <div style={{ ...S.card, background: COLORS.cream, border: `1.5px dashed ${COLORS.sage}` }}>
-          <label style={S.label}>Opcional: Tu Google Gemini API Key</label>
+        <div style={{ ...S.card, background: COLORS.cream, border: `1.5px dashed ${COLORS.sage}`, marginBottom: 12 }}>
+          <label htmlFor="gemini-key" style={S.label}>Google Gemini API Key (Opcional)</label>
           <p style={{ fontSize: 12, color: COLORS.inkLight, margin: '0 0 8px' }}>
-            Si deseas conectar la IA generativa en vivo, ingresa tu clave. Si la dejas en blanco, HiDoctor operará con su base clínica de triaje offline 100% segura.
+            Si deseas conectar IA en vivo, ingresa tu clave. De lo contrario, HiDoctor opera con su base de triaje pediátrico offline 100% autónoma.
           </p>
           <div style={{ display: 'flex', gap: 8 }}>
             <input
+              id="gemini-key"
               type="password"
               style={S.input}
               placeholder="AIzaSy..."
@@ -1299,11 +1810,11 @@ Mantén la respuesta menor a 220 palabras.`;
         </div>
       )}
 
-      {/* Tarjeta de contexto del paciente */}
+      {/* Chip de contexto del paciente */}
       <div style={{
         ...S.card,
         padding: '10px 14px',
-        marginBottom: 12,
+        marginBottom: 10,
         background: '#FAF5EE',
         display: 'flex',
         alignItems: 'center',
@@ -1311,28 +1822,14 @@ Mantén la respuesta menor a 220 palabras.`;
         flexWrap: 'wrap',
         gap: 6
       }}>
-        <div style={{ fontSize: 12.5, color: COLORS.ink, display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span>🧒 <strong>{perfilActivo?.nombre}</strong></span>
-          {ultimaTemp && <span>· 🌡️ {ultimaTemp}°C</span>}
-          {ultimosSintomas.length > 0 && <span>· 📋 {ultimosSintomas.join(', ')}</span>}
+        <div style={{ fontSize: 12.5, color: COLORS.ink }}>
+          🧒 <strong>{perfilActivo?.nombre}</strong>
+          {ultimaTemp && <span> · 🌡️ {ultimaTemp}°C</span>}
+          {ultimosSintomas.length > 0 && <span> · 📋 {ultimosSintomas.join(', ')}</span>}
         </div>
-        <div style={{ fontSize: 11, color: COLORS.sageDark, fontWeight: 600 }}>
-          {customKey ? '🟢 Gemini Conectado' : '🛡️ Triaje Autónomo'}
+        <div style={{ fontSize: 11, color: COLORS.sageDark, fontWeight: 700 }}>
+          {customKey ? '🟢 Gemini Conectado' : '🛡️ Triaje Clínico Autónomo'}
         </div>
-      </div>
-
-      {/* Aviso de responsabilidad médica */}
-      <div style={{
-        background: COLORS.alertBg,
-        borderLeft: `3px solid ${COLORS.alert}`,
-        padding: '8px 12px',
-        borderRadius: 8,
-        marginBottom: 12,
-        fontSize: 11.5,
-        color: COLORS.ink,
-        lineHeight: 1.4
-      }}>
-        ⚠️ <strong>Orientación Preventiva:</strong> Este asistente no reemplaza el diagnóstico de un médico. Si observas riesgo vital o dificultad para respirar, acude de inmediato a urgencias.
       </div>
 
       {/* Caja de mensajes */}
@@ -1340,11 +1837,11 @@ Mantén la respuesta menor a 220 palabras.`;
         ...S.card,
         padding: 12,
         minHeight: 280,
-        maxHeight: 420,
+        maxHeight: 380,
         overflowY: 'auto',
         display: 'flex',
         flexDirection: 'column',
-        gap: 12
+        gap: 10
       }}>
         {mensajes.map(m => (
           <div
@@ -1359,10 +1856,9 @@ Mantén la respuesta menor a 220 palabras.`;
               border: m.emisor === 'user'
                 ? 'none'
                 : `1px solid ${m.esAlerta ? COLORS.alert : COLORS.border}`,
-              borderRadius: m.emisor === 'user' ? '16px 16px 2px 16px' : '16px 16px 16px 2px',
-              padding: '10px 14px',
-              boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-              fontSize: 13.5,
+              borderRadius: m.emisor === 'user' ? '14px 14px 2px 14px' : '14px 14px 14px 2px',
+              padding: '10px 13px',
+              fontSize: 13,
               lineHeight: 1.5,
               whiteSpace: 'pre-line'
             }}
@@ -1373,8 +1869,8 @@ Mantén la respuesta menor a 220 palabras.`;
               justifyContent: 'space-between',
               alignItems: 'center',
               marginTop: 6,
-              fontSize: 10,
-              opacity: 0.75,
+              fontSize: 9.5,
+              opacity: 0.8,
               color: m.emisor === 'user' ? COLORS.white : COLORS.inkLight
             }}>
               <span>{m.fuente || (m.emisor === 'user' ? 'Tú' : 'Doctor IA')}</span>
@@ -1388,9 +1884,9 @@ Mantén la respuesta menor a 220 palabras.`;
             alignSelf: 'flex-start',
             background: COLORS.white,
             border: `1px solid ${COLORS.border}`,
-            borderRadius: '16px 16px 16px 2px',
-            padding: '10px 14px',
-            fontSize: 13,
+            borderRadius: '14px 14px 14px 2px',
+            padding: '8px 12px',
+            fontSize: 12.5,
             color: COLORS.inkLight,
             fontStyle: 'italic'
           }}>
@@ -1400,14 +1896,8 @@ Mantén la respuesta menor a 220 palabras.`;
         <div ref={mensajesEndRef} />
       </div>
 
-      {/* Carrusel de sugerencias rápidas */}
-      <div style={{
-        display: 'flex',
-        gap: 8,
-        overflowX: 'auto',
-        paddingBottom: 8,
-        marginBottom: 10
-      }}>
+      {/* Sugerencias rápidas */}
+      <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 6, marginBottom: 8 }}>
         {SUGERENCIAS.map((sug, i) => (
           <button
             key={i}
@@ -1416,13 +1906,12 @@ Mantén la respuesta menor a 220 palabras.`;
               whiteSpace: 'nowrap',
               background: COLORS.white,
               border: `1px solid ${COLORS.border}`,
-              borderRadius: 20,
-              padding: '6px 12px',
-              fontSize: 12,
+              borderRadius: 16,
+              padding: '5px 11px',
+              fontSize: 11.5,
               cursor: 'pointer',
               color: COLORS.ink,
-              fontFamily: 'Nunito, sans-serif',
-              fontWeight: 500,
+              fontWeight: 600,
               flexShrink: 0
             }}
           >
@@ -1431,25 +1920,22 @@ Mantén la respuesta menor a 220 palabras.`;
         ))}
       </div>
 
-      {/* Barra de entrada de texto */}
+      {/* Input de consulta */}
       <div style={{ display: 'flex', gap: 8 }}>
         <input
           style={{ ...S.input, flex: 1 }}
-          placeholder={`Consulta síntomas o dudas sobre ${perfilActivo?.nombre || 'el paciente'}...`}
+          placeholder={`Escribe tu consulta sobre ${perfilActivo?.nombre || 'el paciente'}...`}
           value={inputTexto}
           onChange={e => setInputTexto(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && enviarPregunta()}
+          aria-label="Pregunta al Doctor IA"
         />
         <button
-          style={{
-            ...S.btn,
-            opacity: cargando || !inputTexto.trim() ? 0.6 : 1,
-            padding: '11px 18px'
-          }}
+          style={{ ...S.btn, padding: '11px 16px', opacity: cargando || !inputTexto.trim() ? 0.6 : 1 }}
           disabled={cargando || !inputTexto.trim()}
           onClick={() => enviarPregunta()}
         >
-          Enviar
+          Consultar
         </button>
       </div>
     </div>
