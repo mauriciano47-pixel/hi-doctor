@@ -204,16 +204,30 @@ function calcularDistancia(lat1, lon1, lat2, lon2) {
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 
 const formatFecha = (iso) => {
-  const d = new Date(iso);
-  return d.toLocaleDateString('es-CL', { day: '2-digit', month: 'short' }) + ' ' +
-    d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+  try {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return 'Fecha pendiente';
+    return d.toLocaleDateString('es-CL', { day: '2-digit', month: 'short' }) + ' ' +
+      d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return 'Fecha pendiente';
+  }
 };
 
-const formatFechaCorta = (iso) => new Date(iso).toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit' });
+const formatFechaCorta = (iso) => {
+  try {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '--/--';
+    return d.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit' });
+  } catch {
+    return '--/--';
+  }
+};
 
 function calcularProximaDosis(med) {
   if (!med || !med.ultimaHora || !med.intervaloHoras) return null;
-  return new Date(new Date(med.ultimaHora).getTime() + med.intervaloHoras * 60 * 60 * 1000);
+  const d = new Date(new Date(med.ultimaHora).getTime() + med.intervaloHoras * 60 * 60 * 1000);
+  return isNaN(d.getTime()) ? null : d;
 }
 
 function detectarPatrones(registros) {
@@ -265,7 +279,7 @@ function useFonts() {
 function GraficaTemperatura({ registros }) {
   const conTemp = useMemo(() => (registros || []).filter(r => r.temperatura)
     .map(r => ({ fecha: new Date(r.fecha), temp: parseFloat(r.temperatura) }))
-    .filter(r => !isNaN(r.temp))
+    .filter(r => !isNaN(r.temp) && !isNaN(r.fecha.getTime()))
     .sort((a, b) => a.fecha - b.fecha), [registros]);
 
   if (conTemp.length < 2) {
@@ -543,6 +557,7 @@ export default function App() {
             perfilActivo={perfilActivo}
             registrosDelPerfil={registrosDelPerfil}
             eliminarRegistro={eliminarRegistro}
+            onVerResumen={() => setVista('resumen')}
           />
         )}
 
@@ -568,6 +583,7 @@ export default function App() {
             perfilActivo={perfilActivo}
             registrosDelPerfil={registrosDelPerfil}
             patrones={patrones}
+            onVolver={() => setVista('historial')}
           />
         )}
 
@@ -719,6 +735,7 @@ function VistaRegistro({
         </button>
       ) : (
         <NuevoRegistroForm
+          key={prefillMedicamento ? `prefill-${prefillMedicamento.nombre}-${prefillMedicamento.dosis}` : 'form-nuevo'}
           onGuardar={agregarRegistro}
           onCancelar={() => setMostrarForm(false)}
           prefillMedicamento={prefillMedicamento}
@@ -773,6 +790,11 @@ function NuevoRegistroForm({ onGuardar, onCancelar, prefillMedicamento, nombrePa
   }
 
   function guardar() {
+    const tieneContenido = sintomas.length > 0 || (fiebre && temperatura) || nota.trim() || foto || (agregarMed && medNombre.trim());
+    if (!tieneContenido) {
+      alert('Por favor selecciona al menos un síntoma, indica temperatura, anota una observación o agrega un medicamento.');
+      return;
+    }
     const registro = {
       fecha: new Date().toISOString(),
       sintomas,
@@ -1024,7 +1046,7 @@ function RegistroCard({ registro }) {
   );
 }
 
-function VistaHistorial({ perfilActivo, registrosDelPerfil, eliminarRegistro }) {
+function VistaHistorial({ perfilActivo, registrosDelPerfil, eliminarRegistro, onVerResumen }) {
   if (!perfilActivo) {
     return <div style={S.card}><p style={{ margin: 0, color: COLORS.inkLight }}>Selecciona o crea un paciente para revisar su historial.</p></div>;
   }
@@ -1035,6 +1057,28 @@ function VistaHistorial({ perfilActivo, registrosDelPerfil, eliminarRegistro }) 
         <h2 style={{ ...S.h2, margin: 0 }}>Historial Clínico: {perfilActivo.nombre}</h2>
         <span style={{ fontSize: 12, color: COLORS.inkLight }}>{registrosDelPerfil.length} eventos</span>
       </div>
+
+      {/* Botón para generar resumen médico en 30 segundos */}
+      {onVerResumen && (
+        <button
+          style={{
+            ...S.btnTerracotta,
+            width: '100%',
+            marginBottom: 14,
+            padding: '12px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            boxShadow: '0 2px 6px rgba(242, 166, 90, 0.25)'
+          }}
+          onClick={onVerResumen}
+          aria-label="Generar resumen para el médico pediatra"
+        >
+          <span style={{ fontSize: 18 }}>📋</span>
+          <span>Generar Resumen Médico Pediátrico (30 Segundos)</span>
+        </button>
+      )}
 
       {/* Gráfica interactiva si hay registros con temperatura */}
       <div style={S.card}>
@@ -1295,7 +1339,7 @@ function VistaGuia() {
   );
 }
 
-function VistaResumen({ perfilActivo, registrosDelPerfil, patrones }) {
+function VistaResumen({ perfilActivo, registrosDelPerfil, patrones, onVolver }) {
   const [copiado, setCopiado] = useState(false);
 
   const textoResumen = useMemo(() => {
@@ -1322,18 +1366,46 @@ function VistaResumen({ perfilActivo, registrosDelPerfil, patrones }) {
     return texto;
   }, [perfilActivo, registrosDelPerfil, patrones]);
 
+  function fallbackCopiar(texto) {
+    try {
+      const textarea = document.createElement('textarea');
+      textarea.value = texto;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2000);
+    } catch {
+      // sin fallo
+    }
+  }
+
   function copiar() {
-    if (navigator.clipboard) {
+    if (navigator.clipboard && window.isSecureContext) {
       navigator.clipboard.writeText(textoResumen).then(() => {
         setCopiado(true);
         setTimeout(() => setCopiado(false), 2000);
-      });
+      }).catch(() => fallbackCopiar(textoResumen));
+    } else {
+      fallbackCopiar(textoResumen);
     }
   }
 
   return (
     <div>
-      <h2 style={S.h2}>Resumen para el Médico Pediatra</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <h2 style={{ ...S.h2, margin: 0 }}>Resumen para el Médico Pediatra</h2>
+        {onVolver && (
+          <button style={S.btnOutline} onClick={onVolver} aria-label="Volver al historial clínico">
+            ← Volver
+          </button>
+        )}
+      </div>
+
       <p style={{ fontSize: 13.5, color: COLORS.inkLight, marginBottom: 14 }}>
         Coloca la pantalla de tu móvil en manos del pediatra en la consulta o copia el texto estructurado:
       </p>
