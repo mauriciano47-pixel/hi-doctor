@@ -381,6 +381,14 @@ const STORAGE_KEY = 'bitacora-sintomas-data-v1';
 export default function App() {
   useFonts();
 
+  const [onboardingCompletado, setOnboardingCompletado] = useState(() => {
+    try {
+      return window.localStorage.getItem('hidoctor_onboarding_completado') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
   const [data, setData] = useState(() => {
     try {
       const res = window.localStorage.getItem(STORAGE_KEY);
@@ -391,9 +399,15 @@ export default function App() {
         }
       }
     } catch {
-      // Fallback a demo data
+      // Sin datos previos
     }
-    return DEMO_DATA;
+    return {
+      tutor: '',
+      pais: 'Chile',
+      perfiles: [],
+      registros: [],
+      contactos: [],
+    };
   });
 
   const perfiles = data.perfiles || [];
@@ -431,6 +445,51 @@ export default function App() {
   }, [data.registros, perfilActivo]);
 
   const patrones = useMemo(() => detectarPatrones(registrosDelPerfil), [registrosDelPerfil]);
+
+  function completarRegistroFamiliar(datosFamiliar) {
+    const nuevoPaciente = {
+      id: uid(),
+      nombre: datosFamiliar.nombreNino,
+      edad: datosFamiliar.edadNino,
+      pesoKg: parseFloat(datosFamiliar.pesoNino) || 14,
+      creado: new Date().toISOString()
+    };
+    const datosIniciales = {
+      tutor: datosFamiliar.nombreTutor,
+      pais: datosFamiliar.pais,
+      perfiles: [nuevoPaciente],
+      registros: [],
+      contactos: [
+        {
+          id: uid(),
+          tipo: 'pediatra',
+          nombre: 'Pediatra de cabecera',
+          telefono: '',
+          direccion: '',
+          nota: 'Anotar aquí el número de contacto de su pediatra',
+        }
+      ]
+    };
+    setData(datosIniciales);
+    setPerfilActivoId(nuevoPaciente.id);
+    try {
+      window.localStorage.setItem('hidoctor_onboarding_completado', 'true');
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(datosIniciales));
+    } catch {}
+    setOnboardingCompletado(true);
+    setVista('registro');
+  }
+
+  function cargarCasoDemoDesdeInicio() {
+    setData(DEMO_DATA);
+    setPerfilActivoId(DEMO_PACIENTE_ID);
+    try {
+      window.localStorage.setItem('hidoctor_onboarding_completado', 'true');
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(DEMO_DATA));
+    } catch {}
+    setOnboardingCompletado(true);
+    setVista('registro');
+  }
 
   function crearPerfil(nombre, pesoKg = 14) {
     const nuevo = { id: uid(), nombre, pesoKg: parseFloat(pesoKg) || 14, creado: new Date().toISOString() };
@@ -479,22 +538,56 @@ export default function App() {
     setMostrarForm(true);
   }
 
+  // Si es un usuario nuevo o sin registro previo, mostrar bienvenida clínica
+  if (!onboardingCompletado) {
+    return (
+      <div style={S.app}>
+        <PantallaBienvenidaRegistro
+          onCompletarRegistro={completarRegistroFamiliar}
+          onCargarDemo={cargarCasoDemoDesdeInicio}
+        />
+      </div>
+    );
+  }
+
   return (
     <div style={S.app}>
       {/* Barra de estado / Marca */}
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
         <div>
           <h1 style={S.h1}>🩺 HiDoctor</h1>
-          <p style={{ ...S.sub, margin: 0, fontSize: 12.5 }}>Bitácora Pediátrica & Doctor IA</p>
+          <p style={{ ...S.sub, margin: 0, fontSize: 12.5 }}>
+            {data.tutor ? `Bitácora Familiar · ${data.tutor}` : 'Bitácora Pediátrica & Doctor IA'}
+          </p>
         </div>
         <div style={{ display: 'flex', gap: 6 }}>
+          <button
+            onClick={() => {
+              try { window.localStorage.removeItem('hidoctor_onboarding_completado'); } catch {}
+              setOnboardingCompletado(false);
+            }}
+            style={{
+              background: COLORS.white,
+              border: `1px solid ${COLORS.border}`,
+              borderRadius: 8,
+              padding: '5px 8px',
+              fontSize: 11,
+              color: COLORS.inkLight,
+              cursor: 'pointer',
+              fontWeight: 600
+            }}
+            title="Editar ficha familiar o registrarse de nuevo"
+            aria-label="Configurar ficha familiar"
+          >
+            ⚙️ Ficha
+          </button>
           <button
             onClick={restablecerDatosDemo}
             style={{
               background: COLORS.white,
               border: `1px solid ${COLORS.border}`,
               borderRadius: 8,
-              padding: '5px 9px',
+              padding: '5px 8px',
               fontSize: 11,
               color: COLORS.sageDark,
               cursor: 'pointer',
@@ -637,6 +730,170 @@ export default function App() {
           <span>Ayuda</span>
         </button>
       </nav>
+    </div>
+  );
+}
+
+function PantallaBienvenidaRegistro({ onCompletarRegistro, onCargarDemo }) {
+  const [nombreTutor, setNombreTutor] = useState('');
+  const [pais, setPais] = useState('Chile');
+  const [nombreNino, setNombreNino] = useState('');
+  const [edadNino, setEdadNino] = useState('');
+  const [pesoNino, setPesoNino] = useState('14');
+
+  function manejarRegistro(e) {
+    e?.preventDefault();
+    if (!nombreNino.trim()) return;
+    onCompletarRegistro({
+      nombreTutor: nombreTutor.trim() || 'Familia',
+      pais,
+      nombreNino: nombreNino.trim(),
+      edadNino: edadNino.trim() || '3 años',
+      pesoNino: pesoNino.trim() || '14',
+    });
+  }
+
+  return (
+    <div style={{ maxWidth: 540, margin: '0 auto', padding: '16px 4px 60px' }}>
+      {/* Encabezado clínico */}
+      <div style={{ textAlign: 'center', marginBottom: 20 }}>
+        <div style={{ fontSize: 44, marginBottom: 4 }}>🩺</div>
+        <h1 style={{ ...S.h1, fontSize: 25, margin: '0 0 6px' }}>HiDoctor</h1>
+        <p style={{ fontSize: 14, color: COLORS.sageDark, fontWeight: 700, margin: '0 0 8px' }}>
+          Bitácora Clínica Pediátrica & Doctor IA
+        </p>
+        <p style={{ fontSize: 13, color: COLORS.inkLight, margin: 0, lineHeight: 1.5 }}>
+          Acompañamiento médico familiar para registrar síntomas, controlar la fiebre con curva térmica SVG y calcular dosis exactas por peso.
+        </p>
+      </div>
+
+      {/* Tarjeta de Registro Exprés */}
+      <form onSubmit={manejarRegistro} style={{ ...S.card, padding: 20, boxShadow: '0 4px 16px rgba(0,0,0,0.06)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14, borderBottom: `1px solid ${COLORS.border}`, paddingBottom: 10 }}>
+          <span style={{ fontSize: 20 }}>📋</span>
+          <div>
+            <h2 style={{ ...S.h2, fontSize: 16, margin: 0 }}>Registro Clínico Familiar</h2>
+            <span style={{ fontSize: 11.5, color: COLORS.inkLight }}>Configuración única en 45 segundos</span>
+          </div>
+        </div>
+
+        {/* 1. Datos del Tutor */}
+        <div style={{ marginBottom: 12 }}>
+          <label htmlFor="reg-tutor" style={S.label}>Nombre del Padre, Madre o Tutor</label>
+          <input
+            id="reg-tutor"
+            style={S.input}
+            value={nombreTutor}
+            onChange={e => setNombreTutor(e.target.value)}
+            placeholder="Ej. Mauricio Uribe, María, etc."
+          />
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <label htmlFor="reg-pais" style={S.label}>País de Residencia (fija números de urgencia)</label>
+          <select
+            id="reg-pais"
+            style={S.input}
+            value={pais}
+            onChange={e => setPais(e.target.value)}
+          >
+            {Object.keys(NUMEROS_EMERGENCIA).map(p => (
+              <option key={p} value={p}>📍 {p}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* 2. Datos del Paciente Infantil */}
+        <div style={{ background: COLORS.cream, borderRadius: 12, padding: 14, marginBottom: 18 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+            <span style={{ fontSize: 18 }}>🧒</span>
+            <span style={{ fontSize: 13.5, fontWeight: 700, color: COLORS.ink }}>Ficha del Niño o Niña (Paciente)</span>
+          </div>
+
+          <div style={{ marginBottom: 10 }}>
+            <label htmlFor="reg-nino" style={S.label}>Nombre del niño o niña *</label>
+            <input
+              id="reg-nino"
+              style={{ ...S.input, background: COLORS.white }}
+              value={nombreNino}
+              onChange={e => setNombreNino(e.target.value)}
+              placeholder="Ej. Lucas, Sofía, Mateo"
+              required
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: 10 }}>
+            <div style={{ flex: 1 }}>
+              <label htmlFor="reg-edad" style={S.label}>Edad aproximada</label>
+              <input
+                id="reg-edad"
+                style={{ ...S.input, background: COLORS.white }}
+                value={edadNino}
+                onChange={e => setEdadNino(e.target.value)}
+                placeholder="Ej. 2 años, 8 meses"
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label htmlFor="reg-peso" style={S.label}>Peso en kg *</label>
+              <input
+                id="reg-peso"
+                type="number"
+                step="0.5"
+                style={{ ...S.input, background: COLORS.white }}
+                value={pesoNino}
+                onChange={e => setPesoNino(e.target.value)}
+                placeholder="14"
+              />
+            </div>
+          </div>
+          <span style={{ fontSize: 11, color: COLORS.inkLight, marginTop: 4, display: 'block' }}>
+            ⚖️ El peso es fundamental para la calculadora de antipiréticos (Paracetamol / Ibuprofeno).
+          </span>
+        </div>
+
+        {/* Botón Principal */}
+        <button
+          type="submit"
+          style={{
+            ...S.btn,
+            width: '100%',
+            padding: '14px 18px',
+            fontSize: 15,
+            opacity: !nombreNino.trim() ? 0.6 : 1,
+            boxShadow: '0 2px 8px rgba(224, 122, 95, 0.3)'
+          }}
+          disabled={!nombreNino.trim()}
+        >
+          🚀 Iniciar Mi Bitácora Pediátrica
+        </button>
+
+        {/* Separador de Modo Demo */}
+        <div style={{ textAlign: 'center', margin: '18px 0 12px', position: 'relative' }}>
+          <hr style={{ border: 'none', borderTop: `1px solid ${COLORS.border}` }} />
+          <span style={{
+            position: 'absolute', top: -9, left: '50%', transform: 'translateX(-50%)',
+            background: COLORS.white, padding: '0 10px', fontSize: 11, color: COLORS.inkLight
+          }}>
+            o si estás evaluando la aplicación
+          </span>
+        </div>
+
+        {/* Botón Modo Demostración */}
+        <button
+          type="button"
+          onClick={onCargarDemo}
+          style={{ ...S.btnOutline, width: '100%', padding: '11px 16px', fontSize: 13 }}
+        >
+          👀 Explorar con Caso Clínico de Prueba (Sofía, 3 años)
+        </button>
+      </form>
+
+      {/* Aviso de Privacidad Offline-First */}
+      <div style={{ textAlign: 'center', marginTop: 16 }}>
+        <p style={{ fontSize: 12, color: COLORS.inkLight, margin: 0, lineHeight: 1.5 }}>
+          🛡️ <strong>100% Privado & Offline-First:</strong> Los datos médicos de tu familia no viajan a ningún servidor externo; se guardan únicamente en el almacenamiento local de tu dispositivo.
+        </p>
+      </div>
     </div>
   );
 }
