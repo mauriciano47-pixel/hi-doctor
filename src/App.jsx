@@ -126,8 +126,33 @@ const TIPOS_LUGAR = {
 // Datos clínicos iniciales de demostración para evaluación inmediata en Vitrina
 const DEMO_PACIENTE_ID = 'paciente-demo-sofia';
 const DEMO_DATA = {
+  tutor: 'Mauricio Uribe Maldonado',
+  pais: 'Chile',
   perfiles: [
-    { id: DEMO_PACIENTE_ID, nombre: 'Sofía (3 años)', creado: new Date(Date.now() - 86400000 * 2).toISOString(), pesoKg: 14 }
+    {
+      id: DEMO_PACIENTE_ID,
+      codigoExpediente: 'HC-PED-2026-3814',
+      nombre: 'Sofía Uribe',
+      alias: 'Sofi',
+      fechaNacimiento: new Date(Date.now() - 86400000 * 365 * 3.2).toISOString().slice(0, 10),
+      edadTexto: '3 años 2 meses',
+      grupoEtario: 'Preescolar (2 a 5 años)',
+      sexo: 'Femenino',
+      pesoKg: 14,
+      tallaCm: 96,
+      imc: '15.2',
+      clasificacionIMC: 'Rango saludable / Eutrófico',
+      grupoSanguineo: 'A+',
+      alergias: ['Ibuprofeno / AINEs', 'Polen / Ácaros'],
+      antecedentes: ['Bronquiolitis a los 11 meses'],
+      vacunasAlDia: true,
+      tutor: 'Mauricio Uribe Maldonado',
+      parentesco: 'Padre',
+      telefonoUrgencia: '+56 9 8765 4321',
+      seguroSalud: 'Fonasa / Complementario',
+      centroSalud: 'Clínica Santa María / Urgencia Infantil',
+      creado: new Date(Date.now() - 86400000 * 2).toISOString(),
+    }
   ],
   registros: [
     {
@@ -190,6 +215,100 @@ const DEMO_DATA = {
   ],
   pais: 'Chile',
 };
+
+// --- Utilidades Clínicas Pediátricas Avanzadas (EMR Pro) ---
+const GRUPOS_SANGUINEOS = ['O+', 'A+', 'B+', 'AB+', 'O-', 'A-', 'B-', 'AB-', 'No determinado'];
+
+const ALERGIAS_COMUNES = [
+  'Ibuprofeno / AINEs',
+  'Penicilina / Amoxicilina',
+  'Paracetamol',
+  'Proteína Leche Vaca (APLV)',
+  'Huevo',
+  'Frutos secos',
+  'Sulfas',
+  'Polen / Ácaros',
+];
+
+const ANTECEDENTES_COMUNES = [
+  'Bronquiolitis recurrente',
+  'Asma infantil',
+  'Prematurez (<37 sem)',
+  'Convulsión febril previa',
+  'Reflujo gastroesofágico',
+  'Cardiopatía congénita',
+  'Dermatitis atópica',
+];
+
+function calcularEdadDetallada(fechaNacStr) {
+  if (!fechaNacStr) return { texto: 'Sin fecha registrada', grupoEtario: 'No determinado', mesesTotales: 0, anios: 0 };
+  const nac = new Date(fechaNacStr);
+  if (isNaN(nac.getTime())) return { texto: 'Fecha no válida', grupoEtario: 'No determinado', mesesTotales: 0, anios: 0 };
+  const hoy = new Date();
+
+  let anios = hoy.getFullYear() - nac.getFullYear();
+  let meses = hoy.getMonth() - nac.getMonth();
+  let dias = hoy.getDate() - nac.getDate();
+
+  if (dias < 0) {
+    meses -= 1;
+    const ultMes = new Date(hoy.getFullYear(), hoy.getMonth(), 0);
+    dias += ultMes.getDate();
+  }
+  if (meses < 0) {
+    anios -= 1;
+    meses += 12;
+  }
+
+  const diasTotales = Math.max(0, Math.floor((hoy - nac) / (1000 * 60 * 60 * 24)));
+  const mesesTotales = anios * 12 + meses;
+
+  let grupoEtario = 'Preescolar';
+  if (diasTotales <= 28) {
+    grupoEtario = 'Neonato (<28 días)';
+  } else if (mesesTotales < 12) {
+    grupoEtario = 'Lactante Menor (1 a 11 meses)';
+  } else if (mesesTotales < 24) {
+    grupoEtario = 'Lactante Mayor (1 a 2 años)';
+  } else if (anios < 6) {
+    grupoEtario = 'Preescolar (2 a 5 años)';
+  } else if (anios < 12) {
+    grupoEtario = 'Escolar (6 a 11 años)';
+  } else {
+    grupoEtario = 'Adolescente (12+ años)';
+  }
+
+  let texto = '';
+  if (diasTotales <= 28) texto = `${diasTotales} días`;
+  else if (anios === 0) texto = `${meses} meses ${dias > 0 ? `y ${dias} d` : ''}`.trim();
+  else texto = `${anios} años ${meses > 0 ? `y ${meses} m` : ''}`.trim();
+
+  return { texto, grupoEtario, anios, meses, dias, diasTotales, mesesTotales };
+}
+
+function calcularIMC(pesoKg, tallaCm) {
+  const p = parseFloat(pesoKg);
+  const t = parseFloat(tallaCm);
+  if (!p || !t || t <= 0) return { valor: null, clasificacion: 'Requiere peso y talla' };
+  const m = t / 100;
+  const imc = (p / (m * m)).toFixed(1);
+  const val = parseFloat(imc);
+
+  let clasificacion = 'Normopeso';
+  if (val < 13.5) clasificacion = 'Bajo peso para la edad';
+  else if (val <= 17.5) clasificacion = 'Rango saludable / Eutrófico';
+  else if (val <= 19.5) clasificacion = 'Riesgo de sobrepeso';
+  else clasificacion = 'Sobrepeso (requiere control)';
+
+  return { valor: imc, clasificacion };
+}
+
+function generarCodigoExpediente() {
+  const num = Math.floor(1000 + Math.random() * 9000);
+  const anio = new Date().getFullYear();
+  return `HC-PED-${anio}-${num}`;
+}
+
 
 function calcularDistancia(lat1, lon1, lat2, lon2) {
   const R = 6371;
@@ -412,9 +531,18 @@ export default function App() {
 
   const perfiles = data.perfiles || [];
   const [perfilActivoId, setPerfilActivoId] = useState(() => perfiles[0]?.id || DEMO_PACIENTE_ID);
-  const [vista, setVista] = useState('registro'); // registro | historial | dosis | ia | guia | resumen | ayuda
+  const [vista, setVista] = useState(() => {
+    try {
+      const h = window.location.hash.replace('#', '').trim();
+      const valid = ['expediente', 'registro', 'historial', 'dosis', 'ia', 'guia', 'resumen', 'ayuda'];
+      return valid.includes(h) ? h : 'registro';
+    } catch {
+      return 'registro';
+    }
+  });
+  const [modoEdicionExpediente, setModoEdicionExpediente] = useState(false);
+  const [modoNuevoHermano, setModoNuevoHermano] = useState(false);
   const [mostrarForm, setMostrarForm] = useState(false);
-  const [mostrarNuevoPerfil, setMostrarNuevoPerfil] = useState(false);
   const [prefillMedicamento, setPrefillMedicamento] = useState(null);
 
   // Asegurar persistencia y fallback seguro
@@ -425,6 +553,28 @@ export default function App() {
       // safe storage fallback
     }
   }, [data]);
+
+  // Sincronización bidireccional SPA con Hash Navigation del navegador (evita pérdida de estado con botón Atrás)
+  useEffect(() => {
+    function sincronizarHash() {
+      const h = window.location.hash.replace('#', '').trim();
+      const valid = ['expediente', 'registro', 'historial', 'dosis', 'ia', 'guia', 'resumen', 'ayuda'];
+      if (valid.includes(h) && h !== vista) {
+        setVista(h);
+      }
+    }
+    window.addEventListener('hashchange', sincronizarHash);
+    return () => window.removeEventListener('hashchange', sincronizarHash);
+  }, [vista]);
+
+  function cambiarVista(nuevaVista) {
+    setVista(nuevaVista);
+    try {
+      if (window.location.hash !== `#${nuevaVista}`) {
+        window.location.hash = `#${nuevaVista}`;
+      }
+    } catch {}
+  }
 
   // Fallback seguro inquebrantable para perfilActivo
   const perfilActivo = useMemo(() => {
@@ -446,56 +596,93 @@ export default function App() {
 
   const patrones = useMemo(() => detectarPatrones(registrosDelPerfil), [registrosDelPerfil]);
 
-  function completarRegistroFamiliar(datosFamiliar) {
-    const nuevoPaciente = {
-      id: uid(),
-      nombre: datosFamiliar.nombreNino,
-      edad: datosFamiliar.edadNino,
-      pesoKg: parseFloat(datosFamiliar.pesoNino) || 14,
-      creado: new Date().toISOString()
+  function guardarExpedienteCompleto(expData) {
+    const edadInfo = calcularEdadDetallada(expData.fechaNacimiento);
+    const imcInfo = calcularIMC(expData.pesoKg, expData.tallaCm);
+
+    const perfilExistente = perfiles.find(p => p.id === expData.id);
+    const idPaciente = expData.id || uid();
+    const codigoExpediente = perfilExistente?.codigoExpediente || expData.codigoExpediente || generarCodigoExpediente();
+
+    const perfilActualizado = {
+      id: idPaciente,
+      codigoExpediente,
+      nombre: expData.nombre.trim(),
+      alias: expData.alias ? expData.alias.trim() : expData.nombre.trim(),
+      fechaNacimiento: expData.fechaNacimiento || '',
+      edadTexto: edadInfo.texto,
+      grupoEtario: edadInfo.grupoEtario,
+      sexo: expData.sexo || 'Femenino',
+      pesoKg: parseFloat(expData.pesoKg) || 14,
+      tallaCm: parseFloat(expData.tallaCm) || 96,
+      imc: imcInfo.valor,
+      clasificacionIMC: imcInfo.clasificacion,
+      grupoSanguineo: expData.grupoSanguineo || 'No determinado',
+      alergias: Array.isArray(expData.alergias) ? expData.alergias : [],
+      antecedentes: Array.isArray(expData.antecedentes) ? expData.antecedentes : [],
+      vacunasAlDia: expData.vacunasAlDia !== false,
+      tutor: expData.tutor ? expData.tutor.trim() : (data.tutor || 'Tutor Familiar'),
+      parentesco: expData.parentesco || 'Madre / Padre',
+      telefonoUrgencia: expData.telefonoUrgencia || '',
+      seguroSalud: expData.seguroSalud || 'Fonasa / Seguro Público',
+      centroSalud: expData.centroSalud || '',
+      creado: perfilExistente?.creado || new Date().toISOString(),
+      actualizado: new Date().toISOString()
     };
-    const datosIniciales = {
-      tutor: datosFamiliar.nombreTutor,
-      pais: datosFamiliar.pais,
-      perfiles: [nuevoPaciente],
-      registros: [],
-      contactos: [
-        {
-          id: uid(),
-          tipo: 'pediatra',
-          nombre: 'Pediatra de cabecera',
-          telefono: '',
-          direccion: '',
-          nota: 'Anotar aquí el número de contacto de su pediatra',
-        }
-      ]
+
+    let nuevosPerfiles;
+    if (perfilExistente) {
+      nuevosPerfiles = perfiles.map(p => p.id === perfilExistente.id ? perfilActualizado : p);
+    } else {
+      nuevosPerfiles = [...perfiles, perfilActualizado];
+    }
+
+    const nuevaData = {
+      ...data,
+      tutor: perfilActualizado.tutor,
+      pais: expData.pais || data.pais || 'Chile',
+      perfiles: nuevosPerfiles,
     };
-    setData(datosIniciales);
-    setPerfilActivoId(nuevoPaciente.id);
+
+    setData(nuevaData);
+    setPerfilActivoId(perfilActualizado.id);
+
     try {
       window.localStorage.setItem('hidoctor_onboarding_completado', 'true');
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(datosIniciales));
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nuevaData));
+      window.localStorage.removeItem('hidoctor_draft_expediente');
     } catch {}
+
     setOnboardingCompletado(true);
-    setVista('registro');
+    setModoEdicionExpediente(false);
+    setModoNuevoHermano(false);
+    cambiarVista('expediente');
   }
 
-  function cargarCasoDemoDesdeInicio() {
-    setData(DEMO_DATA);
+  function cargarCasoDemoSinBorrar() {
+    const sofiaExiste = perfiles.find(p => p.id === DEMO_PACIENTE_ID);
+    if (sofiaExiste) {
+      setPerfilActivoId(DEMO_PACIENTE_ID);
+      cambiarVista('registro');
+      return;
+    }
+
+    const demoPerfil = DEMO_DATA.perfiles[0];
+    const nuevaData = {
+      ...data,
+      perfiles: [...(data.perfiles || []), demoPerfil],
+      registros: [...(data.registros || []), ...DEMO_DATA.registros],
+      contactos: data.contactos && data.contactos.length > 0 ? data.contactos : DEMO_DATA.contactos,
+    };
+
+    setData(nuevaData);
     setPerfilActivoId(DEMO_PACIENTE_ID);
     try {
       window.localStorage.setItem('hidoctor_onboarding_completado', 'true');
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(DEMO_DATA));
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nuevaData));
     } catch {}
     setOnboardingCompletado(true);
-    setVista('registro');
-  }
-
-  function crearPerfil(nombre, pesoKg = 14) {
-    const nuevo = { id: uid(), nombre, pesoKg: parseFloat(pesoKg) || 14, creado: new Date().toISOString() };
-    setData(d => ({ ...d, perfiles: [...(d.perfiles || []), nuevo] }));
-    setPerfilActivoId(nuevo.id);
-    setMostrarNuevoPerfil(false);
+    cambiarVista('registro');
   }
 
   function agregarRegistro(registro) {
@@ -524,27 +711,20 @@ export default function App() {
     setData(d => ({ ...d, pais }));
   }
 
-  function restablecerDatosDemo() {
-    setData(DEMO_DATA);
-    setPerfilActivoId(DEMO_PACIENTE_ID);
-    setMostrarForm(false);
-    setMostrarNuevoPerfil(false);
-    setVista('registro');
-  }
-
   function transferirDosisARegistro(dosisData) {
     setPrefillMedicamento(dosisData);
-    setVista('registro');
+    cambiarVista('registro');
     setMostrarForm(true);
   }
 
-  // Si es un usuario nuevo o sin registro previo, mostrar bienvenida clínica
-  if (!onboardingCompletado) {
+  // Si es un usuario nuevo o sin registros previos, mostrar el Expediente Hospitalario con Auto-Save
+  if (!onboardingCompletado || perfiles.length === 0) {
     return (
       <div style={S.app}>
-        <PantallaBienvenidaRegistro
-          onCompletarRegistro={completarRegistroFamiliar}
-          onCargarDemo={cargarCasoDemoDesdeInicio}
+        <FormularioExpedienteHospitalario
+          esOnboarding={true}
+          onGuardar={guardarExpedienteCompleto}
+          onCargarDemo={cargarCasoDemoSinBorrar}
         />
       </div>
     );
@@ -552,86 +732,112 @@ export default function App() {
 
   return (
     <div style={S.app}>
-      {/* Barra de estado / Marca */}
+      {/* Barra de estado / Credencial EMR Header */}
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
         <div>
           <h1 style={S.h1}>🩺 HiDoctor</h1>
-          <p style={{ ...S.sub, margin: 0, fontSize: 12.5 }}>
-            {data.tutor ? `Bitácora Familiar · ${data.tutor}` : 'Bitácora Pediátrica & Doctor IA'}
+          <p style={{ ...S.sub, margin: 0, fontSize: 12 }}>
+            {perfilActivo ? (
+              <span>
+                <strong>{perfilActivo.nombre}</strong> · {perfilActivo.codigoExpediente || 'EXP-CLINICO'}
+              </span>
+            ) : (
+              'Expediente Pediátrico Hospitalario & Doctor IA'
+            )}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 6 }}>
           <button
             onClick={() => {
-              try { window.localStorage.removeItem('hidoctor_onboarding_completado'); } catch {}
-              setOnboardingCompletado(false);
+              setModoNuevoHermano(false);
+              setModoEdicionExpediente(false);
+              cambiarVista('expediente');
             }}
             style={{
-              background: COLORS.white,
-              border: `1px solid ${COLORS.border}`,
+              background: vista === 'expediente' ? COLORS.sage : COLORS.white,
+              color: vista === 'expediente' ? COLORS.white : COLORS.ink,
+              border: `1.5px solid ${COLORS.sage}`,
               borderRadius: 8,
-              padding: '5px 8px',
-              fontSize: 11,
-              color: COLORS.inkLight,
+              padding: '6px 10px',
+              fontSize: 11.5,
               cursor: 'pointer',
-              fontWeight: 600
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4
             }}
-            title="Editar ficha familiar o registrarse de nuevo"
-            aria-label="Configurar ficha familiar"
+            title="Ver expediente clínico y credencial médica"
+            aria-label="Ver expediente clínico completo"
           >
-            ⚙️ Ficha
+            📋 Ficha EMR
           </button>
           <button
-            onClick={restablecerDatosDemo}
+            onClick={cargarCasoDemoSinBorrar}
             style={{
               background: COLORS.white,
               border: `1px solid ${COLORS.border}`,
               borderRadius: 8,
-              padding: '5px 8px',
-              fontSize: 11,
+              padding: '6px 9px',
+              fontSize: 11.5,
               color: COLORS.sageDark,
               cursor: 'pointer',
               fontWeight: 600
             }}
-            title="Cargar o reiniciar datos de demostración médica"
-            aria-label="Reiniciar caso de demostración"
+            title="Explorar caso de prueba sin alterar tus datos"
+            aria-label="Cargar caso clínico de prueba"
           >
             🔄 Caso Demo
           </button>
         </div>
       </header>
 
-      {/* Selector de perfil o aviso de bienvenida */}
+      {/* Selector de perfil de pacientes y botón de alta */}
       <nav aria-label="Perfiles de pacientes" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16, alignItems: 'center' }}>
         {perfiles.map(p => (
           <button
             key={p.id}
-            onClick={() => setPerfilActivoId(p.id)}
+            onClick={() => {
+              setPerfilActivoId(p.id);
+              setModoEdicionExpediente(false);
+              setModoNuevoHermano(false);
+            }}
             style={S.chip(p.id === perfilActivo?.id)}
             aria-pressed={p.id === perfilActivo?.id}
           >
             🧒 {p.nombre}
           </button>
         ))}
-        {!mostrarNuevoPerfil ? (
-          <button
-            onClick={() => setMostrarNuevoPerfil(true)}
-            style={{ ...S.chip(false), borderStyle: 'dashed', color: COLORS.sageDark }}
-            aria-label="Agregar nuevo paciente"
-          >
-            + Paciente
-          </button>
-        ) : null}
+        <button
+          onClick={() => {
+            setModoNuevoHermano(true);
+            setModoEdicionExpediente(true);
+            cambiarVista('expediente');
+          }}
+          style={{ ...S.chip(false), borderStyle: 'dashed', color: COLORS.sageDark }}
+          aria-label="Agregar nuevo paciente o hermano"
+        >
+          + Paciente
+        </button>
       </nav>
-
-      {mostrarNuevoPerfil && (
-        <div style={S.card}>
-          <PerfilForm onCrear={crearPerfil} onCancelar={() => setMostrarNuevoPerfil(false)} />
-        </div>
-      )}
 
       {/* Contenido según la pestaña activa */}
       <main>
+        {vista === 'expediente' && (modoEdicionExpediente || perfiles.length === 0 ? (
+          <FormularioExpedienteHospitalario
+            perfilInicial={modoNuevoHermano ? null : perfilActivo}
+            esOnboarding={false}
+            onGuardar={guardarExpedienteCompleto}
+            onCancelar={() => { setModoEdicionExpediente(false); setModoNuevoHermano(false); }}
+          />
+        ) : (
+          <CredencialClinicaPediatrica
+            perfilActivo={perfilActivo}
+            onEditar={() => { setModoNuevoHermano(false); setModoEdicionExpediente(true); }}
+            onNuevoPaciente={() => { setModoNuevoHermano(true); setModoEdicionExpediente(true); }}
+            onIrABitacora={() => cambiarVista('registro')}
+          />
+        ))}
+
         {vista === 'registro' && (
           <VistaRegistro
             perfilActivo={perfilActivo}
@@ -641,7 +847,8 @@ export default function App() {
             registrosDelPerfil={registrosDelPerfil}
             patrones={patrones}
             prefillMedicamento={prefillMedicamento}
-            onCrearPerfilPrimero={() => setMostrarNuevoPerfil(true)}
+            onCrearPerfilPrimero={() => { setModoNuevoHermano(true); setModoEdicionExpediente(true); cambiarVista('expediente'); }}
+            onVerExpediente={() => { setModoNuevoHermano(false); setModoEdicionExpediente(false); cambiarVista('expediente'); }}
           />
         )}
 
@@ -650,7 +857,7 @@ export default function App() {
             perfilActivo={perfilActivo}
             registrosDelPerfil={registrosDelPerfil}
             eliminarRegistro={eliminarRegistro}
-            onVerResumen={() => setVista('resumen')}
+            onVerResumen={() => cambiarVista('resumen')}
           />
         )}
 
@@ -676,7 +883,7 @@ export default function App() {
             perfilActivo={perfilActivo}
             registrosDelPerfil={registrosDelPerfil}
             patrones={patrones}
-            onVolver={() => setVista('historial')}
+            onVolver={() => cambiarVista('historial')}
           />
         )}
 
@@ -705,28 +912,28 @@ export default function App() {
 
       {/* Barra de Navegación Inferior Siempre Operativa */}
       <nav style={S.bottomNav} aria-label="Navegación principal de HiDoctor">
-        <button style={S.navBtn(vista === 'registro')} onClick={() => setVista('registro')} aria-label="Pestaña Registro">
-          <span style={{ fontSize: 19 }}>📝</span>
+        <button style={S.navBtn(vista === 'expediente')} onClick={() => { setModoNuevoHermano(false); setModoEdicionExpediente(false); cambiarVista('expediente'); }} aria-label="Pestaña Expediente Clínico">
+          <span style={{ fontSize: 18 }}>📁</span>
+          <span>Ficha</span>
+        </button>
+        <button style={S.navBtn(vista === 'registro')} onClick={() => cambiarVista('registro')} aria-label="Pestaña Registro">
+          <span style={{ fontSize: 18 }}>📝</span>
           <span>Registro</span>
         </button>
-        <button style={S.navBtn(vista === 'historial')} onClick={() => setVista('historial')} aria-label="Pestaña Curva e Historial">
-          <span style={{ fontSize: 19 }}>📊</span>
+        <button style={S.navBtn(vista === 'historial')} onClick={() => cambiarVista('historial')} aria-label="Pestaña Curva e Historial">
+          <span style={{ fontSize: 18 }}>📊</span>
           <span>Curva</span>
         </button>
-        <button style={S.navBtn(vista === 'dosis')} onClick={() => setVista('dosis')} aria-label="Pestaña Calculadora de Dosis por Peso">
-          <span style={{ fontSize: 19 }}>💊</span>
+        <button style={S.navBtn(vista === 'dosis')} onClick={() => cambiarVista('dosis')} aria-label="Pestaña Calculadora de Dosis por Peso">
+          <span style={{ fontSize: 18 }}>💊</span>
           <span>Dosis</span>
         </button>
-        <button style={S.navBtn(vista === 'ia')} onClick={() => setVista('ia')} aria-label="Pestaña Doctor IA">
-          <span style={{ fontSize: 19 }}>🤖</span>
+        <button style={S.navBtn(vista === 'ia')} onClick={() => cambiarVista('ia')} aria-label="Pestaña Doctor IA">
+          <span style={{ fontSize: 18 }}>🤖</span>
           <span>Doctor IA</span>
         </button>
-        <button style={S.navBtn(vista === 'guia')} onClick={() => setVista('guia')} aria-label="Pestaña Guía de Alarma">
-          <span style={{ fontSize: 19 }}>📖</span>
-          <span>Guía</span>
-        </button>
-        <button style={S.navBtn(vista === 'ayuda')} onClick={() => setVista('ayuda')} aria-label="Pestaña Emergencias y Ayuda">
-          <span style={{ fontSize: 19 }}>🆘</span>
+        <button style={S.navBtn(vista === 'ayuda')} onClick={() => cambiarVista('ayuda')} aria-label="Pestaña Emergencias y Ayuda">
+          <span style={{ fontSize: 18 }}>🆘</span>
           <span>Ayuda</span>
         </button>
       </nav>
@@ -734,212 +941,789 @@ export default function App() {
   );
 }
 
-function PantallaBienvenidaRegistro({ onCompletarRegistro, onCargarDemo }) {
-  const [nombreTutor, setNombreTutor] = useState('');
-  const [pais, setPais] = useState('Chile');
-  const [nombreNino, setNombreNino] = useState('');
-  const [edadNino, setEdadNino] = useState('');
-  const [pesoNino, setPesoNino] = useState('14');
+// ---------- 1. Formulario de Expediente Hospitalario (Auto-Save Reactivo) ----------
+function FormularioExpedienteHospitalario({ perfilInicial, esOnboarding, onGuardar, onCancelar, onCargarDemo }) {
+  // Cargar borrador de localStorage si existe para evitar pérdida de datos ante recarga o navegación hacia atrás
+  const [draftLoaded] = useState(() => {
+    try {
+      const d = window.localStorage.getItem('hidoctor_draft_expediente');
+      return d ? JSON.parse(d) : null;
+    } catch {
+      return null;
+    }
+  });
 
-  function manejarRegistro(e) {
+  const [nombre, setNombre] = useState(() => draftLoaded?.nombre || perfilInicial?.nombre || '');
+  const [alias, setAlias] = useState(() => draftLoaded?.alias || perfilInicial?.alias || '');
+  const [sexo, setSexo] = useState(() => draftLoaded?.sexo || perfilInicial?.sexo || 'Femenino');
+  const [fechaNacimiento, setFechaNacimiento] = useState(() => draftLoaded?.fechaNacimiento || perfilInicial?.fechaNacimiento || '');
+  const [pesoKg, setPesoKg] = useState(() => draftLoaded?.pesoKg || (perfilInicial?.pesoKg ? String(perfilInicial.pesoKg) : '14'));
+  const [tallaCm, setTallaCm] = useState(() => draftLoaded?.tallaCm || (perfilInicial?.tallaCm ? String(perfilInicial.tallaCm) : '96'));
+  const [grupoSanguineo, setGrupoSanguineo] = useState(() => draftLoaded?.grupoSanguineo || perfilInicial?.grupoSanguineo || 'No determinado');
+
+  const [alergias, setAlergias] = useState(() => draftLoaded?.alergias || perfilInicial?.alergias || []);
+  const [alergiasTexto, setAlergiasTexto] = useState(() => draftLoaded?.alergiasTexto || '');
+
+  const [antecedentes, setAntecedentes] = useState(() => draftLoaded?.antecedentes || perfilInicial?.antecedentes || []);
+  const [antecedentesTexto, setAntecedentesTexto] = useState(() => draftLoaded?.antecedentesTexto || '');
+
+  const [vacunasAlDia, setVacunasAlDia] = useState(() => draftLoaded?.vacunasAlDia ?? (perfilInicial?.vacunasAlDia ?? true));
+
+  const [tutor, setTutor] = useState(() => draftLoaded?.tutor || perfilInicial?.tutor || '');
+  const [parentesco, setParentesco] = useState(() => draftLoaded?.parentesco || perfilInicial?.parentesco || 'Madre');
+  const [telefonoUrgencia, setTelefonoUrgencia] = useState(() => draftLoaded?.telefonoUrgencia || perfilInicial?.telefonoUrgencia || '');
+  const [pais, setPais] = useState(() => draftLoaded?.pais || perfilInicial?.pais || 'Chile');
+  const [seguroSalud, setSeguroSalud] = useState(() => draftLoaded?.seguroSalud || perfilInicial?.seguroSalud || 'Fonasa / Seguro Público');
+  const [centroSalud, setCentroSalud] = useState(() => draftLoaded?.centroSalud || perfilInicial?.centroSalud || '');
+
+  // Guardado reactivo en tiempo real (Auto-Save Reactivo por cada cambio)
+  useEffect(() => {
+    try {
+      const payload = {
+        nombre, alias, sexo, fechaNacimiento, pesoKg, tallaCm,
+        grupoSanguineo, alergias, alergiasTexto, antecedentes,
+        antecedentesTexto, vacunasAlDia, tutor, parentesco,
+        telefonoUrgencia, pais, seguroSalud, centroSalud
+      };
+      window.localStorage.setItem('hidoctor_draft_expediente', JSON.stringify(payload));
+    } catch {}
+  }, [nombre, alias, sexo, fechaNacimiento, pesoKg, tallaCm, grupoSanguineo, alergias, alergiasTexto, antecedentes, antecedentesTexto, vacunasAlDia, tutor, parentesco, telefonoUrgencia, pais, seguroSalud, centroSalud]);
+
+  const edadCalculada = useMemo(() => calcularEdadDetallada(fechaNacimiento), [fechaNacimiento]);
+  const imcCalculado = useMemo(() => calcularIMC(pesoKg, tallaCm), [pesoKg, tallaCm]);
+
+  function toggleAlergia(item) {
+    if (item === 'Sin alergias conocidas') {
+      setAlergias(['Sin alergias conocidas']);
+      return;
+    }
+    setAlergias(prev => {
+      const limpia = prev.filter(x => x !== 'Sin alergias conocidas');
+      return limpia.includes(item) ? limpia.filter(x => x !== item) : [...limpia, item];
+    });
+  }
+
+  function toggleAntecedente(item) {
+    setAntecedentes(prev => prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item]);
+  }
+
+  function manejarSubmit(e) {
     e?.preventDefault();
-    if (!nombreNino.trim()) return;
-    onCompletarRegistro({
-      nombreTutor: nombreTutor.trim() || 'Familia',
+    if (!nombre.trim()) return;
+
+    const listaFinalAlergias = [...alergias];
+    if (alergiasTexto.trim() && !listaFinalAlergias.includes(alergiasTexto.trim())) {
+      listaFinalAlergias.push(alergiasTexto.trim());
+    }
+
+    const listaFinalAntecedentes = [...antecedentes];
+    if (antecedentesTexto.trim() && !listaFinalAntecedentes.includes(antecedentesTexto.trim())) {
+      listaFinalAntecedentes.push(antecedentesTexto.trim());
+    }
+
+    onGuardar({
+      id: perfilInicial?.id,
+      codigoExpediente: perfilInicial?.codigoExpediente,
+      nombre: nombre.trim(),
+      alias: alias.trim() || nombre.trim(),
+      sexo,
+      fechaNacimiento,
+      pesoKg,
+      tallaCm,
+      grupoSanguineo,
+      alergias: listaFinalAlergias,
+      antecedentes: listaFinalAntecedentes,
+      vacunasAlDia,
+      tutor: tutor.trim() || 'Familiar Responsable',
+      parentesco,
+      telefonoUrgencia: telefonoUrgencia.trim(),
       pais,
-      nombreNino: nombreNino.trim(),
-      edadNino: edadNino.trim() || '3 años',
-      pesoNino: pesoNino.trim() || '14',
+      seguroSalud,
+      centroSalud: centroSalud.trim()
     });
   }
 
   return (
-    <div style={{ maxWidth: 540, margin: '0 auto', padding: '16px 4px 60px' }}>
-      {/* Encabezado clínico */}
-      <div style={{ textAlign: 'center', marginBottom: 20 }}>
-        <div style={{ fontSize: 44, marginBottom: 4 }}>🩺</div>
-        <h1 style={{ ...S.h1, fontSize: 25, margin: '0 0 6px' }}>HiDoctor</h1>
-        <p style={{ fontSize: 14, color: COLORS.sageDark, fontWeight: 700, margin: '0 0 8px' }}>
-          Bitácora Clínica Pediátrica & Doctor IA
-        </p>
+    <div style={{ maxWidth: 560, margin: '0 auto', paddingBottom: 60 }}>
+      {/* Banner de Estado Clínico / Auto-Save */}
+      <div style={{
+        background: '#EAF5F0',
+        border: `1.5px solid ${COLORS.emerald}`,
+        borderRadius: 12,
+        padding: '9px 14px',
+        marginBottom: 16,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 13 }}>🟢</span>
+          <span style={{ fontSize: 11.5, fontWeight: 700, color: '#1B4332' }}>
+            Auto-guardado activo (Tus datos están protegidos en este dispositivo)
+          </span>
+        </div>
+        <span style={{ fontSize: 11, color: COLORS.inkLight, fontWeight: 700 }}>EMR Pro</span>
+      </div>
+
+      <div style={{ textAlign: 'center', marginBottom: 18 }}>
+        <div style={{ fontSize: 40, marginBottom: 4 }}>📋</div>
+        <h1 style={{ ...S.h1, fontSize: 22, margin: '0 0 6px' }}>
+          {esOnboarding ? 'Expediente Pediátrico Hospitalario' : 'Editar Ficha Clínica Pediátrica'}
+        </h1>
         <p style={{ fontSize: 13, color: COLORS.inkLight, margin: 0, lineHeight: 1.5 }}>
-          Acompañamiento médico familiar para registrar síntomas, controlar la fiebre con curva térmica SVG y calcular dosis exactas por peso.
+          Registro clínico técnico para la atención pediátrica, cálculo de dosis y triaje de urgencia.
         </p>
       </div>
 
-      {/* Tarjeta de Registro Exprés */}
-      <form onSubmit={manejarRegistro} style={{ ...S.card, padding: 20, boxShadow: '0 4px 16px rgba(0,0,0,0.06)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14, borderBottom: `1px solid ${COLORS.border}`, paddingBottom: 10 }}>
-          <span style={{ fontSize: 20 }}>📋</span>
-          <div>
-            <h2 style={{ ...S.h2, fontSize: 16, margin: 0 }}>Registro Clínico Familiar</h2>
-            <span style={{ fontSize: 11.5, color: COLORS.inkLight }}>Configuración única en 45 segundos</span>
-          </div>
-        </div>
-
-        {/* 1. Datos del Tutor */}
-        <div style={{ marginBottom: 12 }}>
-          <label htmlFor="reg-tutor" style={S.label}>Nombre del Padre, Madre o Tutor</label>
-          <input
-            id="reg-tutor"
-            style={S.input}
-            value={nombreTutor}
-            onChange={e => setNombreTutor(e.target.value)}
-            placeholder="Ej. Mauricio Uribe, María, etc."
-          />
-        </div>
-
-        <div style={{ marginBottom: 16 }}>
-          <label htmlFor="reg-pais" style={S.label}>País de Residencia (fija números de urgencia)</label>
-          <select
-            id="reg-pais"
-            style={S.input}
-            value={pais}
-            onChange={e => setPais(e.target.value)}
-          >
-            {Object.keys(NUMEROS_EMERGENCIA).map(p => (
-              <option key={p} value={p}>📍 {p}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* 2. Datos del Paciente Infantil */}
-        <div style={{ background: COLORS.cream, borderRadius: 12, padding: 14, marginBottom: 18 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+      <form onSubmit={manejarSubmit}>
+        {/* BLOQUE 1: IDENTIFICACIÓN Y SOMATOMETRÍA */}
+        <div style={{ ...S.card, marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, borderBottom: `1px solid ${COLORS.border}`, paddingBottom: 8 }}>
             <span style={{ fontSize: 18 }}>🧒</span>
-            <span style={{ fontSize: 13.5, fontWeight: 700, color: COLORS.ink }}>Ficha del Niño o Niña (Paciente)</span>
+            <div>
+              <h2 style={{ ...S.h2, fontSize: 15, margin: 0 }}>1. Identificación y Somatometría</h2>
+              <span style={{ fontSize: 11.5, color: COLORS.inkLight }}>Datos biológicos fundamentales del paciente</span>
+            </div>
           </div>
 
           <div style={{ marginBottom: 10 }}>
-            <label htmlFor="reg-nino" style={S.label}>Nombre del niño o niña *</label>
+            <label htmlFor="exp-nombre" style={S.label}>Nombre completo del paciente infantil *</label>
             <input
-              id="reg-nino"
-              style={{ ...S.input, background: COLORS.white }}
-              value={nombreNino}
-              onChange={e => setNombreNino(e.target.value)}
-              placeholder="Ej. Lucas, Sofía, Mateo"
+              id="exp-nombre"
+              style={S.input}
+              value={nombre}
+              onChange={e => setNombre(e.target.value)}
+              placeholder="Ej. Lucas Daniel Pérez González"
               required
             />
           </div>
 
-          <div style={{ display: 'flex', gap: 10 }}>
+          <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
             <div style={{ flex: 1 }}>
-              <label htmlFor="reg-edad" style={S.label}>Edad aproximada</label>
+              <label htmlFor="exp-alias" style={S.label}>Nombre de cariño / Alias</label>
               <input
-                id="reg-edad"
-                style={{ ...S.input, background: COLORS.white }}
-                value={edadNino}
-                onChange={e => setEdadNino(e.target.value)}
-                placeholder="Ej. 2 años, 8 meses"
+                id="exp-alias"
+                style={S.input}
+                value={alias}
+                onChange={e => setAlias(e.target.value)}
+                placeholder="Ej. Luqui"
               />
             </div>
             <div style={{ flex: 1 }}>
-              <label htmlFor="reg-peso" style={S.label}>Peso en kg *</label>
+              <label htmlFor="exp-sexo" style={S.label}>Sexo biológico</label>
+              <select
+                id="exp-sexo"
+                style={S.input}
+                value={sexo}
+                onChange={e => setSexo(e.target.value)}
+              >
+                <option value="Femenino">♀ Femenino</option>
+                <option value="Masculino">♂ Masculino</option>
+              </select>
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 10 }}>
+            <label htmlFor="exp-fnac" style={S.label}>Fecha de Nacimiento exacta *</label>
+            <input
+              id="exp-fnac"
+              type="date"
+              style={S.input}
+              value={fechaNacimiento}
+              onChange={e => setFechaNacimiento(e.target.value)}
+            />
+            {fechaNacimiento && (
+              <div style={{
+                marginTop: 6,
+                background: '#F4F5F7',
+                padding: '6px 10px',
+                borderRadius: 8,
+                fontSize: 12,
+                color: COLORS.ink,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6
+              }}>
+                <span>📅</span>
+                <span><strong>Edad calculada:</strong> {edadCalculada.texto} · <em>{edadCalculada.grupoEtario}</em></span>
+              </div>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', gap: 10, marginBottom: 8 }}>
+            <div style={{ flex: 1 }}>
+              <label htmlFor="exp-peso" style={S.label}>Peso en kg * (dosis exacta)</label>
               <input
-                id="reg-peso"
+                id="exp-peso"
+                type="number"
+                step="0.1"
+                min="1"
+                max="80"
+                style={S.input}
+                value={pesoKg}
+                onChange={e => setPesoKg(e.target.value)}
+                placeholder="14.0"
+                required
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label htmlFor="exp-talla" style={S.label}>Estatura / Talla en cm</label>
+              <input
+                id="exp-talla"
                 type="number"
                 step="0.5"
-                style={{ ...S.input, background: COLORS.white }}
-                value={pesoNino}
-                onChange={e => setPesoNino(e.target.value)}
-                placeholder="14"
+                min="30"
+                max="200"
+                style={S.input}
+                value={tallaCm}
+                onChange={e => setTallaCm(e.target.value)}
+                placeholder="96"
               />
             </div>
           </div>
-          <span style={{ fontSize: 11, color: COLORS.inkLight, marginTop: 4, display: 'block' }}>
-            ⚖️ El peso es fundamental para la calculadora de antipiréticos (Paracetamol / Ibuprofeno).
-          </span>
+
+          {imcCalculado.valor && (
+            <div style={{
+              background: '#EEF3EE',
+              border: `1px solid ${COLORS.emerald}`,
+              borderRadius: 8,
+              padding: '6px 10px',
+              fontSize: 12,
+              color: '#1B4332'
+            }}>
+              📊 <strong>IMC Pediátrico:</strong> {imcCalculado.valor} kg/m² · <span>{imcCalculado.clasificacion}</span>
+            </div>
+          )}
         </div>
 
-        {/* Botón Principal */}
-        <button
-          type="submit"
-          style={{
-            ...S.btn,
-            width: '100%',
-            padding: '14px 18px',
-            fontSize: 15,
-            opacity: !nombreNino.trim() ? 0.6 : 1,
-            boxShadow: '0 2px 8px rgba(224, 122, 95, 0.3)'
-          }}
-          disabled={!nombreNino.trim()}
-        >
-          🚀 Iniciar Mi Bitácora Pediátrica
-        </button>
+        {/* BLOQUE 2: SEGURIDAD CLÍNICA, ALERGIAS Y ANTECEDENTES */}
+        <div style={{ ...S.card, marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, borderBottom: `1px solid ${COLORS.border}`, paddingBottom: 8 }}>
+            <span style={{ fontSize: 18 }}>🛡️</span>
+            <div>
+              <h2 style={{ ...S.h2, fontSize: 15, margin: 0 }}>2. Seguridad Clínica & Alergias</h2>
+              <span style={{ fontSize: 11.5, color: COLORS.inkLight }}>Crucial para evitar contraindicaciones de medicamentos</span>
+            </div>
+          </div>
 
-        {/* Separador de Modo Demo */}
-        <div style={{ textAlign: 'center', margin: '18px 0 12px', position: 'relative' }}>
-          <hr style={{ border: 'none', borderTop: `1px solid ${COLORS.border}` }} />
-          <span style={{
-            position: 'absolute', top: -9, left: '50%', transform: 'translateX(-50%)',
-            background: COLORS.white, padding: '0 10px', fontSize: 11, color: COLORS.inkLight
-          }}>
-            o si estás evaluando la aplicación
-          </span>
+          <div style={{ marginBottom: 12 }}>
+            <label htmlFor="exp-sangre" style={S.label}>Grupo Sanguíneo y Factor Rh</label>
+            <select
+              id="exp-sangre"
+              style={S.input}
+              value={grupoSanguineo}
+              onChange={e => setGrupoSanguineo(e.target.value)}
+            >
+              {GRUPOS_SANGUINEOS.map(g => (
+                <option key={g} value={g}>🩸 {g}</option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ marginBottom: 12 }}>
+            <label style={S.label}>Alergias a Medicamentos o Alimentos (toca para marcar):</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
+              {ALERGIAS_COMUNES.map(a => {
+                const marcada = alergias.includes(a);
+                return (
+                  <button
+                    key={a}
+                    type="button"
+                    onClick={() => toggleAlergia(a)}
+                    style={{
+                      padding: '5px 10px',
+                      borderRadius: 14,
+                      fontSize: 11.5,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      border: `1.5px solid ${marcada ? COLORS.alert : COLORS.border}`,
+                      background: marcada ? COLORS.alertBg : COLORS.white,
+                      color: marcada ? COLORS.alert : COLORS.ink,
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    {marcada ? `⚠️ ${a}` : a}
+                  </button>
+                );
+              })}
+            </div>
+            <input
+              style={{ ...S.input, fontSize: 12, padding: '8px 10px' }}
+              value={alergiasTexto}
+              onChange={e => setAlergiasTexto(e.target.value)}
+              placeholder="¿Otra alergia no listada? Escríbela aquí"
+            />
+          </div>
+
+          <div style={{ marginBottom: 12 }}>
+            <label style={S.label}>Antecedentes Médicos Relevantes:</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
+              {ANTECEDENTES_COMUNES.map(ant => {
+                const marcada = antecedentes.includes(ant);
+                return (
+                  <button
+                    key={ant}
+                    type="button"
+                    onClick={() => toggleAntecedente(ant)}
+                    style={{
+                      padding: '5px 10px',
+                      borderRadius: 14,
+                      fontSize: 11.5,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      border: `1.5px solid ${marcada ? COLORS.sage : COLORS.border}`,
+                      background: marcada ? '#F8ECE8' : COLORS.white,
+                      color: marcada ? COLORS.sageDark : COLORS.ink,
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    {marcada ? `✓ ${ant}` : ant}
+                  </button>
+                );
+              })}
+            </div>
+            <input
+              style={{ ...S.input, fontSize: 12, padding: '8px 10px' }}
+              value={antecedentesTexto}
+              onChange={e => setAntecedentesTexto(e.target.value)}
+              placeholder="Otro antecedente (ej. Cirugía, condición crónica)"
+            />
+          </div>
+
+          <div>
+            <label style={S.label}>Carnet de Vacunación:</label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                type="button"
+                onClick={() => setVacunasAlDia(true)}
+                style={{
+                  ...S.btn,
+                  flex: 1,
+                  padding: '9px 12px',
+                  fontSize: 12,
+                  background: vacunasAlDia ? '#2A9D8F' : COLORS.white,
+                  color: vacunasAlDia ? COLORS.white : COLORS.ink,
+                  border: `1.5px solid ${COLORS.emerald}`
+                }}
+              >
+                ✓ Esquema al día
+              </button>
+              <button
+                type="button"
+                onClick={() => setVacunasAlDia(false)}
+                style={{
+                  ...S.btn,
+                  flex: 1,
+                  padding: '9px 12px',
+                  fontSize: 12,
+                  background: !vacunasAlDia ? COLORS.alert : COLORS.white,
+                  color: !vacunasAlDia ? COLORS.white : COLORS.ink,
+                  border: `1.5px solid ${COLORS.alert}`
+                }}
+              >
+                ⚠️ Dosis pendiente
+              </button>
+            </div>
+          </div>
         </div>
 
-        {/* Botón Modo Demostración */}
-        <button
-          type="button"
-          onClick={onCargarDemo}
-          style={{ ...S.btnOutline, width: '100%', padding: '11px 16px', fontSize: 13 }}
-        >
-          👀 Explorar con Caso Clínico de Prueba (Sofía, 3 años)
-        </button>
+        {/* BLOQUE 3: TUTOR LEGAL Y RED DE COBERTURA */}
+        <div style={{ ...S.card, marginBottom: 18 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, borderBottom: `1px solid ${COLORS.border}`, paddingBottom: 8 }}>
+            <span style={{ fontSize: 18 }}>👨‍👩‍👧</span>
+            <div>
+              <h2 style={{ ...S.h2, fontSize: 15, margin: 0 }}>3. Tutor Legal & Cobertura de Urgencia</h2>
+              <span style={{ fontSize: 11.5, color: COLORS.inkLight }}>Para contacto inmediato y red asistencial</span>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+            <div style={{ flex: 2 }}>
+              <label htmlFor="exp-tutor" style={S.label}>Nombre del Tutor Legal *</label>
+              <input
+                id="exp-tutor"
+                style={S.input}
+                value={tutor}
+                onChange={e => setTutor(e.target.value)}
+                placeholder="Ej. Mauricio Uribe Maldonado"
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label htmlFor="exp-parentesco" style={S.label}>Parentesco</label>
+              <select
+                id="exp-parentesco"
+                style={S.input}
+                value={parentesco}
+                onChange={e => setParentesco(e.target.value)}
+              >
+                <option value="Madre">Madre</option>
+                <option value="Padre">Padre</option>
+                <option value="Abuelo/a">Abuelo/a</option>
+                <option value="Tutor Legal">Tutor Legal</option>
+              </select>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+            <div style={{ flex: 1 }}>
+              <label htmlFor="exp-tel" style={S.label}>Teléfono directo de urgencia</label>
+              <input
+                id="exp-tel"
+                type="tel"
+                style={S.input}
+                value={telefonoUrgencia}
+                onChange={e => setTelefonoUrgencia(e.target.value)}
+                placeholder="Ej. +56 9 8765 4321"
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label htmlFor="exp-pais" style={S.label}>País (fija 131/112/911)</label>
+              <select
+                id="exp-pais"
+                style={S.input}
+                value={pais}
+                onChange={e => setPais(e.target.value)}
+              >
+                {Object.keys(NUMEROS_EMERGENCIA).map(p => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 10 }}>
+            <label htmlFor="exp-centro" style={S.label}>Centro de Salud / Hospital de referencia</label>
+            <input
+              id="exp-centro"
+              style={S.input}
+              value={centroSalud}
+              onChange={e => setCentroSalud(e.target.value)}
+              placeholder="Ej. Clínica Santa María / Hospital Exequiel González Cortés"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="exp-seguro" style={S.label}>Previsión de Salud / Seguro Médico</label>
+            <input
+              id="exp-seguro"
+              style={S.input}
+              value={seguroSalud}
+              onChange={e => setSeguroSalud(e.target.value)}
+              placeholder="Ej. Fonasa Tramo B / Isapre Colmena / Seguro Escolar"
+            />
+          </div>
+        </div>
+
+        {/* Botonera de Acción */}
+        <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+          <button
+            type="submit"
+            style={{
+              ...S.btn,
+              flex: 2,
+              padding: '14px 18px',
+              fontSize: 15,
+              opacity: !nombre.trim() ? 0.6 : 1,
+              boxShadow: '0 4px 12px rgba(224, 122, 95, 0.3)'
+            }}
+            disabled={!nombre.trim()}
+          >
+            💾 Guardar Expediente Clínico Pediátrico
+          </button>
+          {onCancelar && (
+            <button
+              type="button"
+              onClick={onCancelar}
+              style={{ ...S.btnOutline, flex: 1, padding: '14px 18px' }}
+            >
+              Cancelar
+            </button>
+          )}
+        </div>
+
+        {esOnboarding && onCargarDemo && (
+          <div style={{ textAlign: 'center', marginTop: 14 }}>
+            <div style={{ position: 'relative', margin: '14px 0 10px' }}>
+              <hr style={{ border: 'none', borderTop: `1px solid ${COLORS.border}` }} />
+              <span style={{
+                position: 'absolute', top: -9, left: '50%', transform: 'translateX(-50%)',
+                background: COLORS.cream, padding: '0 10px', fontSize: 11, color: COLORS.inkLight
+              }}>
+                o para evaluar la aplicación de inmediato
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={onCargarDemo}
+              style={{ ...S.btnOutline, width: '100%', padding: '11px 16px', fontSize: 13, background: COLORS.white }}
+            >
+              👀 Explorar con Expediente de Demostración (Sofía Uribe, 3 años)
+            </button>
+          </div>
+        )}
       </form>
-
-      {/* Aviso de Privacidad Offline-First */}
-      <div style={{ textAlign: 'center', marginTop: 16 }}>
-        <p style={{ fontSize: 12, color: COLORS.inkLight, margin: 0, lineHeight: 1.5 }}>
-          🛡️ <strong>100% Privado & Offline-First:</strong> Los datos médicos de tu familia no viajan a ningún servidor externo; se guardan únicamente en el almacenamiento local de tu dispositivo.
-        </p>
-      </div>
     </div>
   );
 }
 
-function PerfilForm({ onCrear, onCancelar }) {
-  const [nombre, setNombre] = useState('');
-  const [peso, setPeso] = useState('14');
+// ---------- 2. Credencial Clínica Pediátrica Hospitalaria (EMR Viewer) ----------
+function CredencialClinicaPediatrica({ perfilActivo, onEditar, onNuevoPaciente, onIrABitacora }) {
+  const [copiado, setCopiado] = useState(false);
+
+  if (!perfilActivo) {
+    return (
+      <div style={S.card}>
+        <p style={{ margin: 0, color: COLORS.inkLight }}>No hay expediente seleccionado.</p>
+      </div>
+    );
+  }
+
+  const tieneAlergias = perfilActivo.alergias && perfilActivo.alergias.length > 0 && !perfilActivo.alergias.includes('Sin alergias conocidas');
+
+  function copiarExpedienteTexto() {
+    let t = `📋 EXPEDIENTE CLÍNICO PEDIÁTRICO\n`;
+    t += `Código: ${perfilActivo.codigoExpediente || 'S/N'}\n`;
+    t += `Paciente: ${perfilActivo.nombre} (${perfilActivo.edadTexto || perfilActivo.edad || 'N/A'})\n`;
+    t += `Grupo Etario: ${perfilActivo.grupoEtario || 'N/A'} | Sexo: ${perfilActivo.sexo || 'N/A'}\n`;
+    t += `Somatometría: ${perfilActivo.pesoKg} kg | Talla: ${perfilActivo.tallaCm || '--'} cm | IMC: ${perfilActivo.imc || '--'}\n`;
+    t += `Grupo Sanguíneo: ${perfilActivo.grupoSanguineo || 'No determinado'}\n`;
+    t += `Alergias: ${(perfilActivo.alergias || []).join(', ') || 'Sin alergias declaradas'}\n`;
+    t += `Antecedentes: ${(perfilActivo.antecedentes || []).join(', ') || 'Sin antecedentes patológicos'}\n`;
+    t += `Vacunación: ${perfilActivo.vacunasAlDia ? 'Al día' : 'Pendiente'}\n`;
+    t += `Tutor: ${perfilActivo.tutor} (${perfilActivo.parentesco || 'Tutor'}) - Tel: ${perfilActivo.telefonoUrgencia || 'N/A'}\n`;
+    t += `Centro de Referencia: ${perfilActivo.centroSalud || 'No registrado'}\n`;
+    t += `Previsión: ${perfilActivo.seguroSalud || 'Fonasa'}\n`;
+    t += `Fecha de Emisión: ${new Date().toLocaleDateString('es-CL')} (HiDoctor EMR Pro)`;
+
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(t).then(() => {
+        setCopiado(true);
+        setTimeout(() => setCopiado(false), 2500);
+      });
+    } else {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = t;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        setCopiado(true);
+        setTimeout(() => setCopiado(false), 2500);
+      } catch {}
+    }
+  }
 
   return (
     <div>
-      <h2 style={{ ...S.h2, fontSize: 16 }}>Nuevo Paciente Infantil</h2>
-      <div style={{ marginBottom: 10 }}>
-        <label htmlFor="perfil-nombre" style={S.label}>Nombre del niño o niña</label>
-        <input
-          id="perfil-nombre"
-          style={S.input}
-          value={nombre}
-          onChange={e => setNombre(e.target.value)}
-          placeholder="Ej. Sofía, Mateo, Lucas"
-        />
-      </div>
-      <div style={{ marginBottom: 12 }}>
-        <label htmlFor="perfil-peso" style={S.label}>Peso aproximado en kilogramos (opcional)</label>
-        <input
-          id="perfil-peso"
-          type="number"
-          step="0.5"
-          style={S.input}
-          value={peso}
-          onChange={e => setPeso(e.target.value)}
-          placeholder="Ej. 14"
-        />
-      </div>
-      <div style={{ display: 'flex', gap: 8 }}>
-        <button
-          style={{ ...S.btn, flex: 1 }}
-          onClick={() => nombre.trim() && onCrear(nombre.trim(), peso)}
-          disabled={!nombre.trim()}
-        >
-          Guardar paciente
-        </button>
-        {onCancelar && (
-          <button style={{ ...S.btnOutline, flex: 1 }} onClick={onCancelar}>
-            Cancelar
-          </button>
-        )}
+      {/* Tarjeta Credencial Médica Hospitalaria */}
+      <div style={{
+        ...S.card,
+        padding: 0,
+        overflow: 'hidden',
+        border: `1.5px solid ${COLORS.border}`,
+        boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+        marginBottom: 16
+      }}>
+        {/* Cabecera Estilo Hospitalario */}
+        <div style={{
+          background: 'linear-gradient(135deg, #264653 0%, #2A9D8F 100%)',
+          color: COLORS.white,
+          padding: '14px 18px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <div>
+            <div style={{ fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase', opacity: 0.85, fontWeight: 700 }}>
+              Ficha Clínica EMR · HiDoctor
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 800, fontFamily: 'Quicksand, sans-serif' }}>
+              Expediente Clínico Pediátrico
+            </div>
+          </div>
+          <div style={{
+            background: 'rgba(255,255,255,0.18)',
+            border: '1px solid rgba(255,255,255,0.3)',
+            borderRadius: 8,
+            padding: '4px 8px',
+            fontSize: 11,
+            fontWeight: 700,
+            fontFamily: 'monospace'
+          }}>
+            {perfilActivo.codigoExpediente || 'HC-PED-2026-9481'}
+          </div>
+        </div>
+
+        <div style={{ padding: 18 }}>
+          {/* Fila Principal de Identidad */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
+            <div style={{
+              width: 58,
+              height: 58,
+              borderRadius: '50%',
+              background: perfilActivo.sexo === 'Masculino' ? '#E3F2FD' : '#FCE4EC',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 32,
+              flexShrink: 0
+            }}>
+              {perfilActivo.sexo === 'Masculino' ? '🧒' : '👧'}
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                <h2 style={{ ...S.h2, fontSize: 18, margin: 0 }}>{perfilActivo.nombre}</h2>
+                <span style={{
+                  fontSize: 11,
+                  background: COLORS.cream,
+                  border: `1px solid ${COLORS.border}`,
+                  padding: '2px 7px',
+                  borderRadius: 10,
+                  fontWeight: 700,
+                  color: COLORS.sageDark
+                }}>
+                  🩸 {perfilActivo.grupoSanguineo || 'O+'}
+                </span>
+              </div>
+              <div style={{ fontSize: 12.5, color: COLORS.inkLight, marginTop: 3 }}>
+                {perfilActivo.edadTexto || perfilActivo.edad || '3 años'} · {perfilActivo.grupoEtario || 'Preescolar'} · {perfilActivo.sexo || 'Femenino'}
+              </div>
+            </div>
+          </div>
+
+          {/* Cuadrícula Somatométrica */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr 1fr',
+            gap: 8,
+            marginBottom: 16
+          }}>
+            <div style={{ background: '#FFF8F4', borderRadius: 10, padding: '10px 8px', textAlign: 'center', border: `1px solid ${COLORS.border}` }}>
+              <div style={{ fontSize: 10, color: COLORS.sageDark, fontWeight: 700, textTransform: 'uppercase' }}>Peso Real</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: COLORS.ink, margin: '2px 0' }}>{perfilActivo.pesoKg} <span style={{ fontSize: 12 }}>kg</span></div>
+              <div style={{ fontSize: 10, color: COLORS.inkLight }}>Para dosis exactas</div>
+            </div>
+            <div style={{ background: '#FFF8F4', borderRadius: 10, padding: '10px 8px', textAlign: 'center', border: `1px solid ${COLORS.border}` }}>
+              <div style={{ fontSize: 10, color: COLORS.sageDark, fontWeight: 700, textTransform: 'uppercase' }}>Estatura</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: COLORS.ink, margin: '2px 0' }}>{perfilActivo.tallaCm || '--'} <span style={{ fontSize: 12 }}>cm</span></div>
+              <div style={{ fontSize: 10, color: COLORS.inkLight }}>Crecimiento</div>
+            </div>
+            <div style={{ background: '#FFF8F4', borderRadius: 10, padding: '10px 8px', textAlign: 'center', border: `1px solid ${COLORS.border}` }}>
+              <div style={{ fontSize: 10, color: COLORS.sageDark, fontWeight: 700, textTransform: 'uppercase' }}>IMC Estimado</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: COLORS.ink, margin: '2px 0' }}>{perfilActivo.imc || '--'}</div>
+              <div style={{ fontSize: 10, color: '#2A9D8F', fontWeight: 600 }}>{perfilActivo.clasificacionIMC ? perfilActivo.clasificacionIMC.slice(0, 12) : 'Normal'}</div>
+            </div>
+          </div>
+
+          {/* Banda de Alergias & Bioseguridad Hospitalaria */}
+          <div style={{
+            background: tieneAlergias ? '#FFF5F5' : '#F0FDF4',
+            borderLeft: `4px solid ${tieneAlergias ? COLORS.alert : '#2A9D8F'}`,
+            borderRadius: 8,
+            padding: '10px 12px',
+            marginBottom: 14
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+              <span>{tieneAlergias ? '⚠️' : '✓'}</span>
+              <strong style={{ fontSize: 12, color: tieneAlergias ? COLORS.alert : '#1B4332', textTransform: 'uppercase' }}>
+                {tieneAlergias ? 'Alertas de Alergia Registradas:' : 'Bioseguridad Médica:'}
+              </strong>
+            </div>
+            {tieneAlergias ? (
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
+                {perfilActivo.alergias.map((a, i) => (
+                  <span key={i} style={{
+                    background: '#FFE3E3',
+                    color: '#D90429',
+                    fontSize: 11,
+                    fontWeight: 700,
+                    padding: '2px 8px',
+                    borderRadius: 6,
+                    border: '1px solid #FFC9C9'
+                  }}>
+                    {a}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p style={{ margin: 0, fontSize: 12, color: '#1B4332' }}>
+                Sin alergias medicamentosas ni alimentarias declaradas.
+              </p>
+            )}
+          </div>
+
+          {/* Antecedentes y Vacunación */}
+          <div style={{ background: '#FAF9F6', borderRadius: 10, padding: '12px 14px', marginBottom: 14, fontSize: 12.5 }}>
+            <div style={{ marginBottom: 6 }}>
+              <span style={{ color: COLORS.inkLight, fontWeight: 600 }}>Antecedentes clínicos: </span>
+              <strong style={{ color: COLORS.ink }}>
+                {perfilActivo.antecedentes && perfilActivo.antecedentes.length > 0 ? perfilActivo.antecedentes.join(', ') : 'Sin antecedentes patológicos declarados'}
+              </strong>
+            </div>
+            <div>
+              <span style={{ color: COLORS.inkLight, fontWeight: 600 }}>Esquema de Vacunación: </span>
+              <strong style={{ color: perfilActivo.vacunasAlDia !== false ? '#2A9D8F' : COLORS.alert }}>
+                {perfilActivo.vacunasAlDia !== false ? '✓ Al día para su edad' : '⚠️ Dosis de vacunación pendiente'}
+              </strong>
+            </div>
+          </div>
+
+          {/* Tutor y Cobertura de Urgencia */}
+          <div style={{ background: '#FAF9F6', borderRadius: 10, padding: '12px 14px', marginBottom: 18, fontSize: 12.5 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+              <div>
+                <span style={{ color: COLORS.inkLight }}>Tutor responsable: </span>
+                <strong>{perfilActivo.tutor || 'Familia'} ({perfilActivo.parentesco || 'Tutor'})</strong>
+              </div>
+              {perfilActivo.telefonoUrgencia && (
+                <a href={`tel:${perfilActivo.telefonoUrgencia}`} style={{ color: COLORS.sageDark, fontWeight: 700, textDecoration: 'none' }}>
+                  📞 {perfilActivo.telefonoUrgencia}
+                </a>
+              )}
+            </div>
+            <div>
+              <span style={{ color: COLORS.inkLight }}>Centro de referencia: </span>
+              <strong>{perfilActivo.centroSalud || 'No registrado'}</strong>
+              {perfilActivo.seguroSalud && <span style={{ color: COLORS.inkLight }}> · {perfilActivo.seguroSalud}</span>}
+            </div>
+          </div>
+
+          {/* Botonera de Acciones EMR */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={onEditar}
+                style={{ ...S.btn, flex: 1, padding: '12px', fontSize: 13 }}
+              >
+                ✏️ Modificar Ficha Clínica
+              </button>
+              <button
+                onClick={copiarExpedienteTexto}
+                style={{ ...S.btnOutline, flex: 1, padding: '12px', fontSize: 13 }}
+              >
+                {copiado ? '✓ ¡Copiado!' : '📋 Copiar Ficha'}
+              </button>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={onNuevoPaciente}
+                style={{ ...S.btnOutline, flex: 1, padding: '10px', fontSize: 12.5, color: COLORS.ink }}
+              >
+                ➕ Agregar Hermano/a (Nuevo Paciente)
+              </button>
+              <button
+                onClick={onIrABitacora}
+                style={{ ...S.btnTerracotta, flex: 1, padding: '10px', fontSize: 12.5, textAlign: 'center' }}
+              >
+                📝 Ir a Bitácora
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -953,7 +1737,8 @@ function VistaRegistro({
   registrosDelPerfil,
   patrones,
   prefillMedicamento,
-  onCrearPerfilPrimero
+  onCrearPerfilPrimero,
+  onVerExpediente,
 }) {
   if (!perfilActivo) {
     return (
@@ -967,8 +1752,73 @@ function VistaRegistro({
     );
   }
 
+  const tieneAlergias = perfilActivo.alergias && perfilActivo.alergias.length > 0 && !perfilActivo.alergias.includes('Sin alergias conocidas');
+
   return (
     <div>
+      {/* Banner Resumen EMR del Paciente */}
+      <div style={{
+        ...S.card,
+        padding: '12px 16px',
+        marginBottom: 12,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        background: '#FAF8F5',
+        borderLeft: `4px solid ${tieneAlergias ? COLORS.alert : COLORS.emerald}`
+      }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 14, fontWeight: 800, color: COLORS.ink }}>{perfilActivo.nombre}</span>
+            <span style={{
+              fontSize: 10,
+              background: '#E2E8F0',
+              padding: '2px 6px',
+              borderRadius: 6,
+              fontWeight: 700,
+              color: '#334155',
+              fontFamily: 'monospace'
+            }}>
+              {perfilActivo.codigoExpediente || 'EXP-CLINICO'}
+            </span>
+            <span style={{ fontSize: 11, color: COLORS.sageDark, fontWeight: 700 }}>
+              🩸 {perfilActivo.grupoSanguineo || 'O+'}
+            </span>
+          </div>
+          <div style={{ fontSize: 11.5, color: COLORS.inkLight, marginTop: 2 }}>
+            {perfilActivo.edadTexto || perfilActivo.edad || '3 años'} · {perfilActivo.pesoKg} kg
+            {perfilActivo.tallaCm ? ` · ${perfilActivo.tallaCm} cm` : ''}
+            {perfilActivo.imc ? ` · IMC ${perfilActivo.imc}` : ''}
+          </div>
+          {tieneAlergias && (
+            <div style={{ marginTop: 4, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+              {perfilActivo.alergias.map((a, i) => (
+                <span key={i} style={{ fontSize: 10, background: '#FFECEC', color: '#D90429', padding: '1px 6px', borderRadius: 4, fontWeight: 700 }}>
+                  ⚠️ Alergia: {a}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+        {onVerExpediente && (
+          <button
+            onClick={onVerExpediente}
+            style={{
+              background: COLORS.white,
+              border: `1.5px solid ${COLORS.sage}`,
+              color: COLORS.sageDark,
+              borderRadius: 8,
+              padding: '6px 10px',
+              fontSize: 11.5,
+              fontWeight: 700,
+              cursor: 'pointer',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            📁 Ficha EMR
+          </button>
+        )}
+      </div>
       {/* Alerta de patrones clínicos detectados */}
       {patrones.length > 0 && (
         <div style={{ ...S.card, background: COLORS.alertBg, borderLeft: `4px solid ${COLORS.alert}`, padding: '12px 16px' }}>
@@ -1378,6 +2228,14 @@ function VistaCalculadoraDosis({ perfilActivo, onTransferirDosis }) {
   const [pesoKg, setPesoKg] = useState(() => perfilActivo?.pesoKg ? String(perfilActivo.pesoKg) : '14');
   const [presentacion, setPresentacion] = useState('jarabe120');
 
+  const alergiaIbuprofeno = useMemo(() => {
+    const alergias = perfilActivo?.alergias || [];
+    return alergias.some(a => {
+      const l = a.toLowerCase();
+      return l.includes('ibuprofeno') || l.includes('aine') || l.includes('antiinflamat');
+    });
+  }, [perfilActivo]);
+
   const PRESENTACIONES = {
     paracetamol: [
       { id: 'gotas100', nombre: 'Gotas Pediátricas (100 mg/ml)', mgPorMl: 100, esGotas: true },
@@ -1432,6 +2290,7 @@ function VistaCalculadoraDosis({ perfilActivo, onTransferirDosis }) {
   }, [farmaco, pKg, presActual]);
 
   function aplicarARegistro() {
+    if (farmaco === 'ibuprofeno' && alergiaIbuprofeno) return;
     onTransferirDosis({
       nombre: `${farmaco === 'paracetamol' ? 'Paracetamol' : 'Ibuprofeno'} (${presActual.nombre})`,
       dosis: presActual.esGotas ? String(calculo.dosisGotas) : String(calculo.dosisMl),
@@ -1439,6 +2298,8 @@ function VistaCalculadoraDosis({ perfilActivo, onTransferirDosis }) {
       intervaloHoras: farmaco === 'paracetamol' ? 8 : 8,
     });
   }
+
+  const bloqueadoPorAlergia = farmaco === 'ibuprofeno' && alergiaIbuprofeno;
 
   return (
     <div>
@@ -1468,15 +2329,35 @@ function VistaCalculadoraDosis({ perfilActivo, onTransferirDosis }) {
             style={{
               ...S.btn,
               flex: 1,
-              background: farmaco === 'ibuprofeno' ? COLORS.sage : COLORS.white,
-              color: farmaco === 'ibuprofeno' ? COLORS.white : COLORS.ink,
-              border: `1.5px solid ${COLORS.sage}`,
+              background: farmaco === 'ibuprofeno' ? (alergiaIbuprofeno ? COLORS.alert : COLORS.sage) : COLORS.white,
+              color: farmaco === 'ibuprofeno' ? COLORS.white : (alergiaIbuprofeno ? COLORS.alert : COLORS.ink),
+              border: `1.5px solid ${alergiaIbuprofeno ? COLORS.alert : COLORS.sage}`,
             }}
             onClick={() => { setFarmaco('ibuprofeno'); setPresentacion('jarabe100'); }}
           >
-            🔥 Ibuprofeno
+            🔥 Ibuprofeno {alergiaIbuprofeno ? '⚠️ (Alergia)' : ''}
           </button>
         </div>
+
+        {/* Alerta de Contraindicación por Alergias Clínicas */}
+        {bloqueadoPorAlergia && (
+          <div style={{
+            background: '#FFECEC',
+            border: '2px solid #E63946',
+            borderRadius: 12,
+            padding: '12px 14px',
+            marginBottom: 16,
+            color: '#900C3F'
+          }}>
+            <div style={{ fontWeight: 800, fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+              🚨 CONTRAINDICACIÓN MÉDICA CRÍTICA
+            </div>
+            <p style={{ fontSize: 12.5, margin: '6px 0 0', lineHeight: 1.4 }}>
+              <strong>{perfilActivo?.nombre}</strong> tiene registrada una <strong>Alergia a Ibuprofeno / AINEs</strong> en su Ficha Clínica.
+              No administre este fármaco. Utilice Paracetamol o consulte de urgencia con su pediatra.
+            </p>
+          </div>
+        )}
 
         {/* Input de Peso */}
         <div style={{ marginBottom: 14 }}>
@@ -1558,10 +2439,18 @@ function VistaCalculadoraDosis({ perfilActivo, onTransferirDosis }) {
         </div>
 
         <button
-          style={{ ...S.btn, width: '100%', padding: '12px 16px' }}
+          style={{
+            ...S.btn,
+            width: '100%',
+            padding: '12px 16px',
+            background: bloqueadoPorAlergia ? '#9E2A2B' : COLORS.sage,
+            opacity: bloqueadoPorAlergia ? 0.7 : 1,
+            cursor: bloqueadoPorAlergia ? 'not-allowed' : 'pointer'
+          }}
           onClick={aplicarARegistro}
+          disabled={bloqueadoPorAlergia}
         >
-          📋 Registrar esta dosis en la bitácora de {perfilActivo?.nombre || 'paciente'}
+          {bloqueadoPorAlergia ? '❌ Fármaco Contraindicado por Alergia' : `📋 Registrar esta dosis en la bitácora de ${perfilActivo?.nombre || 'paciente'}`}
         </button>
       </div>
     </div>
