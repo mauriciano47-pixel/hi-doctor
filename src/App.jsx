@@ -213,7 +213,6 @@ const DEMO_DATA = {
       nota: 'Servicio de urgencia pediátrica 24/7',
     },
   ],
-  pais: 'Chile',
 };
 
 // --- Utilidades Clínicas Pediátricas Avanzadas (EMR Pro) ---
@@ -263,7 +262,7 @@ function calcularEdadDetallada(fechaNacStr) {
   const diasTotales = Math.max(0, Math.floor((hoy - nac) / (1000 * 60 * 60 * 24)));
   const mesesTotales = anios * 12 + meses;
 
-  let grupoEtario = 'Preescolar';
+  let grupoEtario;
   if (diasTotales <= 28) {
     grupoEtario = 'Neonato (<28 días)';
   } else if (mesesTotales < 12) {
@@ -278,7 +277,7 @@ function calcularEdadDetallada(fechaNacStr) {
     grupoEtario = 'Adolescente (12+ años)';
   }
 
-  let texto = '';
+  let texto;
   if (diasTotales <= 28) texto = `${diasTotales} días`;
   else if (anios === 0) texto = `${meses} meses ${dias > 0 ? `y ${dias} d` : ''}`.trim();
   else texto = `${anios} años ${meses > 0 ? `y ${meses} m` : ''}`.trim();
@@ -294,7 +293,7 @@ function calcularIMC(pesoKg, tallaCm) {
   const imc = (p / (m * m)).toFixed(1);
   const val = parseFloat(imc);
 
-  let clasificacion = 'Normopeso';
+  let clasificacion;
   if (val < 13.5) clasificacion = 'Bajo peso para la edad';
   else if (val <= 17.5) clasificacion = 'Rango saludable / Eutrófico';
   else if (val <= 19.5) clasificacion = 'Riesgo de sobrepeso';
@@ -517,9 +516,7 @@ export default function App() {
           return parsed;
         }
       }
-    } catch {
-      // Sin datos previos
-    }
+    } catch (err) { void err; }
     return {
       tutor: '',
       pais: 'Chile',
@@ -529,7 +526,7 @@ export default function App() {
     };
   });
 
-  const perfiles = data.perfiles || [];
+  const perfiles = useMemo(() => data.perfiles || [], [data.perfiles]);
   const [perfilActivoId, setPerfilActivoId] = useState(() => perfiles[0]?.id || DEMO_PACIENTE_ID);
   const [vista, setVista] = useState(() => {
     try {
@@ -545,13 +542,29 @@ export default function App() {
   const [mostrarForm, setMostrarForm] = useState(false);
   const [prefillMedicamento, setPrefillMedicamento] = useState(null);
 
+  // Estado de Personalización B2B / Marca Blanca para Clínicas y Consultas Privadas
+  const [marcaBlanca, setMarcaBlanca] = useState(() => {
+    try {
+      const saved = window.localStorage.getItem('hidoctor_whitelabel_config');
+      return saved ? JSON.parse(saved) : { activo: false, nombreClinica: '', telefonoUrgencia: '', linkReserva: '' };
+    } catch {
+      return { activo: false, nombreClinica: '', telefonoUrgencia: '', linkReserva: '' };
+    }
+  });
+  const [mostrarModalMarcaBlanca, setMostrarModalMarcaBlanca] = useState(false);
+
+  function guardarMarcaBlanca(nuevaConfig) {
+    setMarcaBlanca(nuevaConfig);
+    try {
+      window.localStorage.setItem('hidoctor_whitelabel_config', JSON.stringify(nuevaConfig));
+    } catch (err) { void err; }
+  }
+
   // Asegurar persistencia y fallback seguro
   useEffect(() => {
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    } catch {
-      // safe storage fallback
-    }
+    } catch (err) { void err; }
   }, [data]);
 
   // Sincronización bidireccional SPA con Hash Navigation del navegador (evita pérdida de estado con botón Atrás)
@@ -573,20 +586,13 @@ export default function App() {
       if (window.location.hash !== `#${nuevaVista}`) {
         window.location.hash = `#${nuevaVista}`;
       }
-    } catch {}
+    } catch (err) { void err; }
   }
 
   // Fallback seguro inquebrantable para perfilActivo
   const perfilActivo = useMemo(() => {
     return perfiles.find(p => p.id === perfilActivoId) || perfiles[0] || null;
   }, [perfiles, perfilActivoId]);
-
-  // Si no hay perfil seleccionado válido pero existen perfiles, sincronizar ID
-  useEffect(() => {
-    if (perfilActivo && perfilActivo.id !== perfilActivoId) {
-      setPerfilActivoId(perfilActivo.id);
-    }
-  }, [perfilActivo, perfilActivoId]);
 
   const registrosDelPerfil = useMemo(() => {
     const regs = data.registros || [];
@@ -651,7 +657,7 @@ export default function App() {
       window.localStorage.setItem('hidoctor_onboarding_completado', 'true');
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nuevaData));
       window.localStorage.removeItem('hidoctor_draft_expediente');
-    } catch {}
+    } catch (err) { void err; }
 
     setOnboardingCompletado(true);
     setModoEdicionExpediente(false);
@@ -680,7 +686,7 @@ export default function App() {
     try {
       window.localStorage.setItem('hidoctor_onboarding_completado', 'true');
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nuevaData));
-    } catch {}
+    } catch (err) { void err; }
     setOnboardingCompletado(true);
     cambiarVista('registro');
   }
@@ -754,7 +760,27 @@ export default function App() {
             )}
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 6 }}>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <button
+            onClick={() => setMostrarModalMarcaBlanca(true)}
+            style={{
+              background: marcaBlanca?.activo ? '#2A9D8F' : COLORS.white,
+              color: marcaBlanca?.activo ? COLORS.white : '#2A9D8F',
+              border: '1.5px solid #2A9D8F',
+              borderRadius: 8,
+              padding: '6px 9px',
+              fontSize: 11.5,
+              cursor: 'pointer',
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4
+            }}
+            title="Personalizar modo marca blanca / clínica B2B"
+            aria-label="Abrir personalización de marca blanca o clínica"
+          >
+            🏥 {marcaBlanca?.activo ? 'Clínica ON' : 'B2B'}
+          </button>
           <button
             onClick={() => {
               setModoNuevoHermano(false);
@@ -798,6 +824,74 @@ export default function App() {
           </button>
         </div>
       </header>
+
+      {/* Banner de Modo Clínica / Marca Blanca Institucional */}
+      {marcaBlanca?.activo && (
+        <div style={{
+          background: 'linear-gradient(135deg, #2A9D8F, #1E7268)',
+          color: '#FFFFFF',
+          padding: '10px 14px',
+          borderRadius: 12,
+          marginBottom: 14,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 8,
+          boxShadow: '0 2px 8px rgba(42, 157, 143, 0.25)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 20 }}>🏥</span>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: 13 }}>
+                {marcaBlanca.nombreClinica || 'Centro Pediátrico Especializado'}
+              </div>
+              <div style={{ fontSize: 11, opacity: 0.9 }}>
+                Servicio Institucional · Guardia 24/7:{' '}
+                <a href={`tel:${marcaBlanca.telefonoUrgencia || '+56987654321'}`} style={{ color: '#FFF', fontWeight: 700, textDecoration: 'underline' }}>
+                  {marcaBlanca.telefonoUrgencia || '+56 9 8765 4321'}
+                </a>
+              </div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            {marcaBlanca.linkReserva && (
+              <a
+                href={marcaBlanca.linkReserva}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  background: '#FFFFFF',
+                  color: '#2A9D8F',
+                  fontSize: 11,
+                  fontWeight: 800,
+                  padding: '5px 10px',
+                  borderRadius: 6,
+                  textDecoration: 'none'
+                }}
+              >
+                📅 Reservar Hora
+              </a>
+            )}
+            <button
+              onClick={() => setMostrarModalMarcaBlanca(true)}
+              style={{
+                background: 'rgba(255,255,255,0.2)',
+                color: '#FFFFFF',
+                border: 'none',
+                fontSize: 11,
+                fontWeight: 700,
+                padding: '5px 8px',
+                borderRadius: 6,
+                cursor: 'pointer'
+              }}
+              aria-label="Ajustar configuración de Modo Clínica"
+            >
+              ⚙️
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Selector de perfil de pacientes y botón de alta */}
       <nav aria-label="Perfiles de pacientes" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16, alignItems: 'center' }}>
@@ -891,6 +985,7 @@ export default function App() {
             perfilActivo={perfilActivo}
             registrosDelPerfil={registrosDelPerfil}
             patrones={patrones}
+            marcaBlanca={marcaBlanca}
             onVolver={() => cambiarVista('historial')}
           />
         )}
@@ -906,8 +1001,47 @@ export default function App() {
         )}
       </main>
 
-      {/* Firma de Titularidad Canónica */}
-      <footer style={{ textAlign: 'center', marginTop: 32, marginBottom: 8 }}>
+      {/* Firma de Titularidad Canónica & Accesos Rápidos PWA y B2B */}
+      <footer style={{ textAlign: 'center', marginTop: 28, marginBottom: 12 }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
+          <a
+            href="./download.html"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              fontSize: 12,
+              fontWeight: 700,
+              color: COLORS.sage,
+              textDecoration: 'none',
+              padding: '5px 12px',
+              borderRadius: 20,
+              background: '#FFF0EA',
+              border: `1px solid ${COLORS.sage}`
+            }}
+          >
+            📲 Instalar como App PWA
+          </a>
+          <button
+            onClick={() => setMostrarModalMarcaBlanca(true)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              fontSize: 12,
+              fontWeight: 700,
+              color: '#2A9D8F',
+              background: '#E8F5F3',
+              border: '1px solid #2A9D8F',
+              borderRadius: 20,
+              padding: '5px 12px',
+              cursor: 'pointer'
+            }}
+            aria-label="Abrir configuración de Marca Blanca o Clínica"
+          >
+            🏥 {marcaBlanca?.activo ? 'Clínica Activa' : 'Modo Clínica B2B'}
+          </button>
+        </div>
         <p style={{
           fontSize: 11.5,
           letterSpacing: 0.5,
@@ -917,6 +1051,15 @@ export default function App() {
           HiDoctor · Desarrollado por Mauricio Uribe Maldonado · Privacidad Local 100% Offline-First
         </p>
       </footer>
+
+      {/* Modal de Personalización B2B / Marca Blanca */}
+      {mostrarModalMarcaBlanca && (
+        <ModalMarcaBlanca
+          marcaBlanca={marcaBlanca}
+          onGuardar={guardarMarcaBlanca}
+          onClose={() => setMostrarModalMarcaBlanca(false)}
+        />
+      )}
 
       {/* Barra de Navegación Inferior Siempre Operativa */}
       <nav style={S.bottomNav} aria-label="Navegación principal de HiDoctor">
@@ -994,7 +1137,7 @@ function FormularioExpedienteHospitalario({ perfilInicial, esOnboarding, onGuard
         telefonoUrgencia, pais, seguroSalud, centroSalud
       };
       window.localStorage.setItem('hidoctor_draft_expediente', JSON.stringify(payload));
-    } catch {}
+    } catch (err) { void err; }
   }, [nombre, alias, sexo, fechaNacimiento, pesoKg, tallaCm, grupoSanguineo, alergias, alergiasTexto, antecedentes, antecedentesTexto, vacunasAlDia, tutor, parentesco, telefonoUrgencia, pais, seguroSalud, centroSalud]);
 
   const edadCalculada = useMemo(() => calcularEdadDetallada(fechaNacimiento), [fechaNacimiento]);
@@ -1521,7 +1664,7 @@ function CredencialClinicaPediatrica({ perfilActivo, onEditar, onNuevoPaciente, 
         document.body.removeChild(ta);
         setCopiado(true);
         setTimeout(() => setCopiado(false), 2500);
-      } catch {}
+      } catch (err) { void err; }
     }
   }
 
@@ -2231,6 +2374,20 @@ function VistaHistorial({ perfilActivo, registrosDelPerfil, eliminarRegistro, on
 }
 
 // ---------- Calculadora Canónica de Dosis por Peso ----------
+const PRESENTACIONES_DOSIS = {
+  paracetamol: [
+    { id: 'gotas100', nombre: 'Gotas Pediátricas (100 mg/ml)', mgPorMl: 100, esGotas: true },
+    { id: 'jarabe120', nombre: 'Jarabe Pediátrico (120 mg / 5 ml) [24 mg/ml]', mgPorMl: 24, esGotas: false },
+    { id: 'jarabe160', nombre: 'Jarabe Pediátrico (160 mg / 5 ml) [32 mg/ml]', mgPorMl: 32, esGotas: false },
+    { id: 'jarabe250', nombre: 'Jarabe Forte (250 mg / 5 ml) [50 mg/ml]', mgPorMl: 50, esGotas: false },
+  ],
+  ibuprofeno: [
+    { id: 'jarabe100', nombre: 'Jarabe Infantil (100 mg / 5 ml) [20 mg/ml]', mgPorMl: 20, esGotas: false },
+    { id: 'jarabe200', nombre: 'Jarabe Forte (200 mg / 5 ml) [40 mg/ml]', mgPorMl: 40, esGotas: false },
+    { id: 'gotas40', nombre: 'Gotas Pediátricas (40 mg/ml)', mgPorMl: 40, esGotas: true },
+  ],
+};
+
 function VistaCalculadoraDosis({ perfilActivo, onTransferirDosis }) {
   const [farmaco, setFarmaco] = useState('paracetamol'); // paracetamol | ibuprofeno
   const [pesoKg, setPesoKg] = useState(() => perfilActivo?.pesoKg ? String(perfilActivo.pesoKg) : '14');
@@ -2244,22 +2401,10 @@ function VistaCalculadoraDosis({ perfilActivo, onTransferirDosis }) {
     });
   }, [perfilActivo]);
 
-  const PRESENTACIONES = {
-    paracetamol: [
-      { id: 'gotas100', nombre: 'Gotas Pediátricas (100 mg/ml)', mgPorMl: 100, esGotas: true },
-      { id: 'jarabe120', nombre: 'Jarabe Pediátrico (120 mg / 5 ml) [24 mg/ml]', mgPorMl: 24, esGotas: false },
-      { id: 'jarabe160', nombre: 'Jarabe Pediátrico (160 mg / 5 ml) [32 mg/ml]', mgPorMl: 32, esGotas: false },
-      { id: 'jarabe250', nombre: 'Jarabe Forte (250 mg / 5 ml) [50 mg/ml]', mgPorMl: 50, esGotas: false },
-    ],
-    ibuprofeno: [
-      { id: 'jarabe100', nombre: 'Jarabe Infantil (100 mg / 5 ml) [20 mg/ml]', mgPorMl: 20, esGotas: false },
-      { id: 'jarabe200', nombre: 'Jarabe Forte (200 mg / 5 ml) [40 mg/ml]', mgPorMl: 40, esGotas: false },
-      { id: 'gotas40', nombre: 'Gotas Pediátricas (40 mg/ml)', mgPorMl: 40, esGotas: true },
-    ],
-  };
-
-  const listaPres = PRESENTACIONES[farmaco];
-  const presActual = listaPres.find(p => p.id === presentacion) || listaPres[0];
+  const listaPres = PRESENTACIONES_DOSIS[farmaco] || PRESENTACIONES_DOSIS.paracetamol;
+  const presActual = useMemo(() => {
+    return listaPres.find(p => p.id === presentacion) || listaPres[0];
+  }, [listaPres, presentacion]);
 
   const pKg = Math.max(1, parseFloat(pesoKg) || 0);
 
@@ -2493,13 +2638,21 @@ function VistaGuia() {
   );
 }
 
-function VistaResumen({ perfilActivo, registrosDelPerfil, patrones, onVolver }) {
+function VistaResumen({ perfilActivo, registrosDelPerfil, patrones, marcaBlanca, onVolver }) {
   const [copiado, setCopiado] = useState(false);
 
   const textoResumen = useMemo(() => {
     const nombre = perfilActivo?.nombre || 'Paciente';
+    const institucion = marcaBlanca?.activo && marcaBlanca?.nombreClinica
+      ? marcaBlanca.nombreClinica
+      : 'HiDoctor HealthTech';
     let texto = `📋 RESUMEN CLÍNICO PEDIÁTRICO — ${nombre}\n`;
-    texto += `Generado el ${new Date().toLocaleDateString('es-CL')} con HiDoctor\n`;
+    texto += `Institución: ${institucion}\n`;
+    texto += `Generado el ${new Date().toLocaleDateString('es-CL')} | Expediente: ${perfilActivo?.codigoExpediente || 'N/A'}\n`;
+    if (perfilActivo?.pesoKg) {
+      texto += `Peso: ${perfilActivo.pesoKg} kg | Talla: ${perfilActivo.tallaCm || '—'} cm | IMC: ${perfilActivo.imc || '—'}\n`;
+      texto += `Alergias: ${perfilActivo.alergias?.length ? perfilActivo.alergias.join(', ') : 'Ninguna conocida'}\n`;
+    }
     texto += `----------------------------------------\n\n`;
 
     if (patrones.length > 0) {
@@ -2518,7 +2671,7 @@ function VistaResumen({ perfilActivo, registrosDelPerfil, patrones, onVolver }) 
     });
 
     return texto;
-  }, [perfilActivo, registrosDelPerfil, patrones]);
+  }, [perfilActivo, registrosDelPerfil, patrones, marcaBlanca]);
 
   function fallbackCopiar(texto) {
     try {
@@ -2533,9 +2686,7 @@ function VistaResumen({ perfilActivo, registrosDelPerfil, patrones, onVolver }) 
       document.body.removeChild(textarea);
       setCopiado(true);
       setTimeout(() => setCopiado(false), 2000);
-    } catch {
-      // sin fallo
-    }
+    } catch (err) { void err; }
   }
 
   function copiar() {
@@ -2549,37 +2700,163 @@ function VistaResumen({ perfilActivo, registrosDelPerfil, patrones, onVolver }) 
     }
   }
 
+  function compartirWhatsApp() {
+    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(textoResumen)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+
+  function imprimirPDF() {
+    window.print();
+  }
+
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <h2 style={{ ...S.h2, margin: 0 }}>Resumen para el Médico Pediatra</h2>
-        {onVolver && (
-          <button style={S.btnOutline} onClick={onVolver} aria-label="Volver al historial clínico">
-            ← Volver
+      {/* Vista en Pantalla (Oculta al imprimir) */}
+      <div className="no-print">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <h2 style={{ ...S.h2, margin: 0 }}>Resumen para el Médico Pediatra</h2>
+          {onVolver && (
+            <button style={S.btnOutline} onClick={onVolver} aria-label="Volver al historial clínico">
+              ← Volver
+            </button>
+          )}
+        </div>
+
+        <p style={{ fontSize: 13.5, color: COLORS.inkLight, marginBottom: 14 }}>
+          Entrega el reporte al pediatra o compártelo instantáneamente por WhatsApp o PDF impreso:
+        </p>
+
+        {/* Acciones directas */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8, marginBottom: 14 }}>
+          <button
+            style={{ ...S.btnTerracotta, background: '#25D366', borderColor: '#25D366', color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 12.5 }}
+            onClick={compartirWhatsApp}
+            aria-label="Compartir ficha clínica por WhatsApp con el pediatra"
+          >
+            💬 Enviar WhatsApp
           </button>
+          <button
+            style={{ ...S.btnPrimary, background: '#2A9D8F', borderColor: '#2A9D8F', color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 12.5 }}
+            onClick={imprimirPDF}
+            aria-label="Imprimir o exportar ficha clínica a PDF"
+          >
+            🖨️ Imprimir / PDF
+          </button>
+          <button
+            style={{ ...S.btnOutline, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 12.5 }}
+            onClick={copiar}
+            aria-label="Copiar resumen clínico al portapapeles"
+          >
+            {copiado ? '✓ Copiado' : '📋 Copiar Texto'}
+          </button>
+        </div>
+
+        <div style={{
+          ...S.card,
+          whiteSpace: 'pre-wrap',
+          fontSize: 12.5,
+          fontFamily: 'monospace',
+          background: '#FAF8F5',
+          lineHeight: 1.6,
+          maxHeight: 320,
+          overflowY: 'auto'
+        }}>
+          {textoResumen}
+        </div>
+      </div>
+
+      {/* Vista de Impresión Médica Oficial (Solo activa en @media print / Exportar a PDF) */}
+      <div className="print-only" style={{ padding: '16px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+        <div style={{ borderBottom: '2.5px solid #2D2926', paddingBottom: '12px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <h1 style={{ fontSize: '20px', margin: 0, textTransform: 'uppercase', color: '#111827', fontWeight: 800 }}>
+              {marcaBlanca?.activo && marcaBlanca?.nombreClinica ? marcaBlanca.nombreClinica : 'HiDoctor — Bitácora Clínica Pediátrica'}
+            </h1>
+            <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#4B5563' }}>
+              Ficha Clínica & Reporte Evolutivo Térmico
+            </p>
+          </div>
+          <div style={{ textAlign: 'right', fontSize: '11px', color: '#4B5563' }}>
+            <div><strong>Emisión:</strong> {new Date().toLocaleDateString('es-CL')}</div>
+            <div><strong>Expediente:</strong> {perfilActivo?.codigoExpediente || 'HC-PENDIENTE'}</div>
+          </div>
+        </div>
+
+        {/* Ficha del Paciente */}
+        <div className="print-card" style={{ padding: '12px', marginBottom: '14px', borderRadius: '6px' }}>
+          <h2 style={{ fontSize: '13px', margin: '0 0 8px', borderBottom: '1px solid #E5E7EB', paddingBottom: '4px', textTransform: 'uppercase', color: '#1F2937' }}>
+            Datos del Paciente & Antecedentes
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', fontSize: '11.5px', lineHeight: 1.4 }}>
+            <div><strong>Nombre:</strong> {perfilActivo?.nombre || '—'}</div>
+            <div><strong>Edad:</strong> {perfilActivo?.edadTexto || '—'}</div>
+            <div><strong>Grupo Etario:</strong> {perfilActivo?.grupoEtario || '—'}</div>
+            <div><strong>Peso:</strong> {perfilActivo?.pesoKg ? `${perfilActivo.pesoKg} kg` : '—'}</div>
+            <div><strong>Talla:</strong> {perfilActivo?.tallaCm ? `${perfilActivo.tallaCm} cm` : '—'}</div>
+            <div><strong>IMC:</strong> {perfilActivo?.imc || '—'} ({perfilActivo?.clasificacionIMC || '—'})</div>
+            <div><strong>Grupo Sanguíneo:</strong> {perfilActivo?.grupoSanguineo || '—'}</div>
+            <div><strong>Alergias:</strong> <span style={{ color: perfilActivo?.alergias?.length ? '#B91C1C' : 'inherit', fontWeight: perfilActivo?.alergias?.length ? 700 : 'normal' }}>{perfilActivo?.alergias?.length ? perfilActivo.alergias.join(', ') : 'Ninguna conocida'}</span></div>
+            <div><strong>Tutor:</strong> {perfilActivo?.tutor || '—'} ({perfilActivo?.telefonoUrgencia || '—'})</div>
+          </div>
+        </div>
+
+        {/* Alertas Clínicas */}
+        {patrones.length > 0 && (
+          <div className="print-card" style={{ padding: '10px 12px', marginBottom: '14px', borderRadius: '6px', borderLeft: '4px solid #E07A5F' }}>
+            <h3 style={{ fontSize: '12px', margin: '0 0 4px', color: '#B91C1C' }}>
+              ⚠️ Patrones Clínicos Observados
+            </h3>
+            <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '11px', lineHeight: 1.5 }}>
+              {patrones.map((p, i) => (
+                <li key={i}>{p.texto}</li>
+              ))}
+            </ul>
+          </div>
         )}
+
+        {/* Tabla Cronológica */}
+        <div className="print-card" style={{ padding: '12px', marginBottom: '32px', borderRadius: '6px' }}>
+          <h2 style={{ fontSize: '13px', margin: '0 0 8px', borderBottom: '1px solid #E5E7EB', paddingBottom: '4px', textTransform: 'uppercase', color: '#1F2937' }}>
+            Cronología de Registros & Medicación Administrada ({registrosDelPerfil.length} registros)
+          </h2>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5px', textAlign: 'left' }}>
+            <thead>
+              <tr style={{ borderBottom: '1.5px solid #9CA3AF', background: '#F9FAFB' }}>
+                <th style={{ padding: '6px' }}>Fecha y Hora</th>
+                <th style={{ padding: '6px' }}>Temperatura</th>
+                <th style={{ padding: '6px' }}>Síntomas</th>
+                <th style={{ padding: '6px' }}>Medicación / Dosis</th>
+                <th style={{ padding: '6px' }}>Observaciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {registrosDelPerfil.map((r, i) => (
+                <tr key={i} style={{ borderBottom: '1px solid #E5E7EB' }}>
+                  <td style={{ padding: '5px 6px' }}>{formatFecha(r.fecha)}</td>
+                  <td style={{ padding: '5px 6px', fontWeight: r.temperatura >= 38 ? 'bold' : 'normal', color: r.temperatura >= 38 ? '#DC2626' : 'inherit' }}>
+                    {r.temperatura ? `${r.temperatura}°C` : '—'}
+                  </td>
+                  <td style={{ padding: '5px 6px' }}>{r.sintomas?.join(', ') || '—'}</td>
+                  <td style={{ padding: '5px 6px' }}>
+                    {r.medicamento ? `${r.medicamento.nombre} (${r.medicamento.dosis} ${r.medicamento.unidad})` : '—'}
+                  </td>
+                  <td style={{ padding: '5px 6px' }}>{r.nota || '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Firmas y Timbres */}
+        <div style={{ marginTop: '40px', display: 'flex', justifyContent: 'space-around', fontSize: '11px' }}>
+          <div style={{ borderTop: '1px solid #6B7280', width: '220px', textAlign: 'center', paddingTop: '6px' }}>
+            Firma del Padre / Tutor Responsable
+          </div>
+          <div style={{ borderTop: '1px solid #6B7280', width: '220px', textAlign: 'center', paddingTop: '6px' }}>
+            Firma y Timbre del Médico / Pediatra
+          </div>
+        </div>
       </div>
-
-      <p style={{ fontSize: 13.5, color: COLORS.inkLight, marginBottom: 14 }}>
-        Coloca la pantalla de tu móvil en manos del pediatra en la consulta o copia el texto estructurado:
-      </p>
-
-      <div style={{
-        ...S.card,
-        whiteSpace: 'pre-wrap',
-        fontSize: 12.5,
-        fontFamily: 'monospace',
-        background: '#FAF8F5',
-        lineHeight: 1.6,
-        maxHeight: 320,
-        overflowY: 'auto'
-      }}>
-        {textoResumen}
-      </div>
-
-      <button style={{ ...S.btnTerracotta, width: '100%', marginTop: 8 }} onClick={copiar}>
-        {copiado ? '✓ ¡Resumen Copiado al Portapapeles!' : '📋 Copiar Resumen para WhatsApp o Pediatra'}
-      </button>
     </div>
   );
 }
@@ -2990,7 +3267,7 @@ Instrucciones:
 
   function guardarApiKey(key) {
     setCustomKey(key);
-    try { window.localStorage.setItem('hidoctor_gemini_api_key', key); } catch {}
+    try { window.localStorage.setItem('hidoctor_gemini_api_key', key); } catch (err) { void err; }
     setMostrarConfigKey(false);
   }
 
@@ -3163,6 +3440,258 @@ Instrucciones:
         >
           Consultar
         </button>
+      </div>
+    </div>
+  );
+}
+
+// ---------- Modal de Personalización de Marca Blanca B2B (Modo Clínica) ----------
+function ModalMarcaBlanca({ marcaBlanca, onGuardar, onClose }) {
+  const [activo, setActivo] = useState(marcaBlanca?.activo || false);
+  const [nombreClinica, setNombreClinica] = useState(marcaBlanca?.nombreClinica || '');
+  const [telefonoUrgencia, setTelefonoUrgencia] = useState(marcaBlanca?.telefonoUrgencia || '');
+  const [linkReserva, setLinkReserva] = useState(marcaBlanca?.linkReserva || '');
+
+  function handleGuardar(e) {
+    e.preventDefault();
+    onGuardar({
+      activo,
+      nombreClinica: nombreClinica.trim(),
+      telefonoUrgencia: telefonoUrgencia.trim(),
+      linkReserva: linkReserva.trim(),
+    });
+    onClose();
+  }
+
+  function cargarDemoSantaMaria() {
+    setActivo(true);
+    setNombreClinica('Clínica Pediátrica Santa María');
+    setTelefonoUrgencia('+56 2 2913 0000');
+    setLinkReserva('https://www.clinicasantamaria.cl/urgencia-pediatrica');
+  }
+
+  function restablecerDefault() {
+    setActivo(false);
+    setNombreClinica('');
+    setTelefonoUrgencia('');
+    setLinkReserva('');
+  }
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: 'rgba(0,0,0,0.6)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 16,
+      zIndex: 9999,
+      backdropFilter: 'blur(3px)'
+    }}>
+      <div style={{
+        background: '#FFF7F0',
+        borderRadius: 16,
+        padding: 24,
+        maxWidth: 480,
+        width: '100%',
+        boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+        border: '2px solid #E07A5F',
+        maxHeight: '90vh',
+        overflowY: 'auto'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <h2 style={{ fontSize: 18, color: '#2D2926', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+            🏥 Modo Clínica / Marca Blanca B2B
+          </h2>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              fontSize: 20,
+              cursor: 'pointer',
+              color: '#8A7F77',
+              padding: 4
+            }}
+            aria-label="Cerrar modal de personalización"
+          >
+            ✕
+          </button>
+        </div>
+
+        <p style={{ fontSize: 13, color: '#8A7F77', lineHeight: 1.5, marginBottom: 16 }}>
+          Adapta HiDoctor con la identidad visual y canales directos de tu clínica, hospital o consulta pediátrica privada para ofrecerlo a tus pacientes o inversores.
+        </p>
+
+        {/* Demo Rápido para Compradores / Inversores */}
+        <div style={{
+          background: '#E8F5F3',
+          border: '1px solid #2A9D8F',
+          borderRadius: 10,
+          padding: '12px 14px',
+          marginBottom: 16,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 8
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 16 }}>✨</span>
+            <span style={{ fontSize: 12.5, fontWeight: 700, color: '#1E7268' }}>
+              Demostración Lista para Inversores y Adquirentes
+            </span>
+          </div>
+          <p style={{ fontSize: 11.5, color: '#2D2926', margin: 0, lineHeight: 1.4 }}>
+            Carga un preset institucional real en 1 clic para ver cómo la app se viste con la marca de una clínica:
+          </p>
+          <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+            <button
+              type="button"
+              onClick={cargarDemoSantaMaria}
+              style={{
+                flex: 1,
+                background: '#2A9D8F',
+                color: '#FFF',
+                border: 'none',
+                borderRadius: 6,
+                padding: '6px 10px',
+                fontSize: 11.5,
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              🧪 Cargar Demo (Clínica Santa María)
+            </button>
+            <button
+              type="button"
+              onClick={restablecerDefault}
+              style={{
+                background: 'transparent',
+                color: '#8A7F77',
+                border: '1px solid #CCC',
+                borderRadius: 6,
+                padding: '6px 10px',
+                fontSize: 11.5,
+                cursor: 'pointer'
+              }}
+            >
+              🔄 Restablecer
+            </button>
+          </div>
+        </div>
+
+        <form onSubmit={handleGuardar}>
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 700, color: '#2D2926', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={activo}
+                onChange={e => setActivo(e.target.checked)}
+                style={{ width: 18, height: 18, accentColor: '#2A9D8F' }}
+              />
+              Activar Modo Clínica Institucional
+            </label>
+          </div>
+
+          <div style={{ marginBottom: 12 }}>
+            <label htmlFor="mb-nombre" style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#2D2926', marginBottom: 4 }}>
+              Nombre de la Clínica o Centro Médico:
+            </label>
+            <input
+              id="mb-nombre"
+              type="text"
+              value={nombreClinica}
+              onChange={e => setNombreClinica(e.target.value)}
+              placeholder="Ej: Clínica Pediátrica Santa María"
+              style={{
+                width: '100%',
+                padding: '9px 12px',
+                borderRadius: 8,
+                border: '1.5px solid #F0E4DA',
+                fontSize: 13,
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+
+          <div style={{ marginBottom: 12 }}>
+            <label htmlFor="mb-tel" style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#2D2926', marginBottom: 4 }}>
+              Teléfono de Urgencias 24/7 (Llamada Rápida):
+            </label>
+            <input
+              id="mb-tel"
+              type="tel"
+              value={telefonoUrgencia}
+              onChange={e => setTelefonoUrgencia(e.target.value)}
+              placeholder="Ej: +56 2 2913 0000"
+              style={{
+                width: '100%',
+                padding: '9px 12px',
+                borderRadius: 8,
+                border: '1.5px solid #F0E4DA',
+                fontSize: 13,
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+
+          <div style={{ marginBottom: 18 }}>
+            <label htmlFor="mb-link" style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#2D2926', marginBottom: 4 }}>
+              Enlace de Reserva de Horas / Portal Paciente:
+            </label>
+            <input
+              id="mb-link"
+              type="url"
+              value={linkReserva}
+              onChange={e => setLinkReserva(e.target.value)}
+              placeholder="Ej: https://santamaria.cl/reservas"
+              style={{
+                width: '100%',
+                padding: '9px 12px',
+                borderRadius: 8,
+                border: '1.5px solid #F0E4DA',
+                fontSize: 13,
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                padding: '9px 16px',
+                borderRadius: 8,
+                border: '1px solid #CCC',
+                background: '#FFF',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer'
+              }}
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              style={{
+                padding: '9px 20px',
+                borderRadius: 8,
+                border: 'none',
+                background: '#E07A5F',
+                color: '#FFF',
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              Guardar Configuración
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

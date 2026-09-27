@@ -76,3 +76,34 @@ textarea:focus-visible {
 .fade-in {
   animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* ===================================================================
+   Estilos Médicos de Impresión Limpia (A4 / Exportación PDF)
+   =================================================================== */
+@media print {
+  body, html, #root {
+    background: #ffffff !important;
+    color: #111827 !important;
+    box-shadow: none !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  nav, footer, .no-print, button:not(.btn-print-force) {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .print-card {
+    border: 1px solid #d1d5db !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+  }
+}
+
+.print-only {
+  display: none;
+}
