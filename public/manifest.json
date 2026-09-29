@@ -1,6 +1,6 @@
 {
-  "name": "HiDoctor — Bitácora Pediátrica & Doctor IA",
-  "short_name": "HiDoctor",
+  "name": "HiDoc — Bitácora Pediátrica & Doctor IA",
+  "short_name": "HiDoc",
   "description": "Bitácora clínica pediátrica inteligente, seguimiento de fiebre con curva térmica SVG, calculadora de dosis por peso y triaje con IA.",
   "start_url": "./index.html",
   "display": "standalone",

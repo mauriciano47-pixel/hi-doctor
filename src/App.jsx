@@ -766,7 +766,7 @@ export default function App() {
               <rect x="224" y="128" width="64" height="160" rx="16" fill="#2A9D8F"/>
               <rect x="176" y="176" width="160" height="64" rx="16" fill="#2A9D8F"/>
             </svg>
-            HiDoctor
+            HiDoc
           </h1>
           <p style={{ ...S.sub, margin: 0, fontSize: 12 }}>
             {perfilActivo ? (
@@ -1105,7 +1105,7 @@ export default function App() {
           color: COLORS.inkLight,
           fontFamily: 'Nunito, sans-serif'
         }}>
-          HiDoctor · Desarrollado por Mauricio Uribe Maldonado · Privacidad Local 100% Offline-First
+          HiDoc · Desarrollado por Mauricio Uribe Maldonado · Privacidad Local 100% Offline-First
         </p>
       </footer>
 
@@ -1132,7 +1132,7 @@ export default function App() {
       )}
 
       {/* Barra de Navegación Inferior Siempre Operativa */}
-      <nav style={S.bottomNav} aria-label="Navegación principal de HiDoctor">
+      <nav style={S.bottomNav} aria-label="Navegación principal de HiDoc">
         <button style={S.navBtn(vista === 'expediente')} onClick={() => { setModoNuevoHermano(false); setModoEdicionExpediente(false); cambiarVista('expediente'); }} aria-label="Pestaña Expediente Clínico">
           <span style={{ fontSize: 18 }}>📁</span>
           <span>Ficha</span>
@@ -1755,7 +1755,7 @@ function CredencialClinicaPediatrica({ perfilActivo, onEditar, onNuevoPaciente, 
     t += `Tutor: ${perfilActivo.tutor} (${perfilActivo.parentesco || 'Tutor'}) - Tel: ${perfilActivo.telefonoUrgencia || 'N/A'}\n`;
     t += `Centro de Referencia: ${perfilActivo.centroSalud || 'No registrado'}\n`;
     t += `Previsión: ${perfilActivo.seguroSalud || 'Fonasa'}\n`;
-    t += `Fecha de Emisión: ${new Date().toLocaleDateString('es-CL')} (HiDoctor EMR Pro)`;
+    t += `Fecha de Emisión: ${new Date().toLocaleDateString('es-CL')} (HiDoc EMR Pro)`;
 
     if (navigator.clipboard && window.isSecureContext) {
       navigator.clipboard.writeText(t).then(() => {
@@ -1801,7 +1801,7 @@ function CredencialClinicaPediatrica({ perfilActivo, onEditar, onNuevoPaciente, 
         }}>
           <div>
             <div style={{ fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase', opacity: 0.85, fontWeight: 700 }}>
-              Ficha Clínica EMR · HiDoctor
+              Ficha Clínica EMR · HiDoc
             </div>
             <div style={{ fontSize: 16, fontWeight: 800, fontFamily: 'Quicksand, sans-serif' }}>
               Expediente Clínico Pediátrico
@@ -2756,7 +2756,7 @@ function VistaResumen({ perfilActivo, registrosDelPerfil, patrones, marcaBlanca,
     const nombre = perfilActivo?.nombre || 'Paciente';
     const institucion = marcaBlanca?.activo && marcaBlanca?.nombreClinica
       ? marcaBlanca.nombreClinica
-      : 'HiDoctor HealthTech';
+      : 'HiDoc HealthTech';
     let texto = `📋 RESUMEN CLÍNICO PEDIÁTRICO — ${nombre}\n`;
     texto += `Institución: ${institucion}\n`;
     texto += `Generado el ${new Date().toLocaleDateString('es-CL')} | Expediente: ${perfilActivo?.codigoExpediente || 'N/A'}\n`;
@@ -2881,7 +2881,7 @@ function VistaResumen({ perfilActivo, registrosDelPerfil, patrones, marcaBlanca,
         <div style={{ borderBottom: '2.5px solid #2D2926', paddingBottom: '12px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <h1 style={{ fontSize: '20px', margin: 0, textTransform: 'uppercase', color: '#111827', fontWeight: 800 }}>
-              {marcaBlanca?.activo && marcaBlanca?.nombreClinica ? marcaBlanca.nombreClinica : 'HiDoctor — Bitácora Clínica Pediátrica'}
+              {marcaBlanca?.activo && marcaBlanca?.nombreClinica ? marcaBlanca.nombreClinica : 'HiDoc — Bitácora Clínica Pediátrica'}
             </h1>
             <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#4B5563' }}>
               Ficha Clínica & Reporte Evolutivo Térmico
@@ -3243,7 +3243,7 @@ function generarRespuestaOffline(pregunta, perfilActivo, registrosDelPerfil, pat
   } else if (p.includes('dosis') || p.includes('paracetamol') || p.includes('ibuprofeno') || p.includes('jarabe')) {
     respuesta = `💊 Dosificación Pediátrica Segura\n\nEn pediatría, las dosis dependen estrictamente del peso real del niño en kilogramos, nunca de la edad.\n\nPuedes calcular los mililitros exactos para ${nombre} en nuestra pestaña 💊 Dosis con las presentaciones comerciales de gotas y jarabe.`;
   } else {
-    respuesta = `📋 Orientación Pediátrica para ${nombre}\n\nAntecedentes en su bitácora:\n${sintomasRecientes.length > 0 ? `• Síntomas recientes: ${sintomasRecientes.join(', ')}` : '• Sin síntomas graves registrados.'}\n${ultimaTemp ? `• Última temperatura: ${ultimaTemp}°C` : ''}\n${patrones.length > 0 ? `• Patrones detectados: ${patrones.map(pat => pat.texto).join('; ')}\n` : ''}\nRecomendaciones:\n1. Mantén a ${nombre} hidratado y en reposo cómodo.\n2. Continúa registrando la evolución en HiDoctor para que el médico tenga la cronología exacta.\n3. Si notas dificultad para respirar, letargo o fiebre alta continua, acude a urgencias.`;
+    respuesta = `📋 Orientación Pediátrica para ${nombre}\n\nAntecedentes en su bitácora:\n${sintomasRecientes.length > 0 ? `• Síntomas recientes: ${sintomasRecientes.join(', ')}` : '• Sin síntomas graves registrados.'}\n${ultimaTemp ? `• Última temperatura: ${ultimaTemp}°C` : ''}\n${patrones.length > 0 ? `• Patrones detectados: ${patrones.map(pat => pat.texto).join('; ')}\n` : ''}\nRecomendaciones:\n1. Mantén a ${nombre} hidratado y en reposo cómodo.\n2. Continúa registrando la evolución en HiDoc para que el médico tenga la cronología exacta.\n3. Si notas dificultad para respirar, letargo o fiebre alta continua, acude a urgencias.`;
   }
 
   return { texto: respuesta, esAlerta };
@@ -3254,7 +3254,7 @@ function VistaAsistenteIA({ perfilActivo, registrosDelPerfil, patrones }) {
     {
       id: 'init-1',
       emisor: 'asistente',
-      texto: `👋 ¡Hola! Soy tu Doctor IA, asistente de triaje pediátrico de HiDoctor.\n\nEstoy aquí para orientarte ante síntomas de ${perfilActivo?.nombre || 'tu hijo/a'}, identificar señales de alarma y preparar la consulta médica.\n\n¿Qué síntomas observas en este momento?`,
+      texto: `👋 ¡Hola! Soy tu Doctor IA, asistente de triaje pediátrico de HiDoc.\n\nEstoy aquí para orientarte ante síntomas de ${perfilActivo?.nombre || 'tu hijo/a'}, identificar señales de alarma y preparar la consulta médica.\n\n¿Qué síntomas observas en este momento?`,
       hora: new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }),
       esAlerta: false,
     }
@@ -3304,7 +3304,7 @@ function VistaAsistenteIA({ perfilActivo, registrosDelPerfil, patrones }) {
       const timeoutId = setTimeout(() => controller.abort(), 8000);
 
       try {
-        const promptSistema = `Eres el Asistente Pediátrico de HiDoctor.
+        const promptSistema = `Eres el Asistente Pediátrico de HiDoc.
 Paciente: ${perfilActivo?.nombre || 'Niño/a'}, peso: ${perfilActivo?.pesoKg || 14} kg.
 Última temperatura: ${ultimaTemp ? ultimaTemp + '°C' : 'Sin registro'}.
 Síntomas: ${ultimosSintomas.join(', ') || 'Ninguno reciente'}.
@@ -3408,7 +3408,7 @@ Instrucciones:
         <div style={{ ...S.card, background: COLORS.cream, border: `1.5px dashed ${COLORS.sage}`, marginBottom: 12 }}>
           <label htmlFor="gemini-key" style={S.label}>Google Gemini API Key (Opcional)</label>
           <p style={{ fontSize: 12, color: COLORS.inkLight, margin: '0 0 8px' }}>
-            Si deseas conectar IA en vivo, ingresa tu clave. De lo contrario, HiDoctor opera con su base de triaje pediátrico offline 100% autónoma.
+            Si deseas conectar IA en vivo, ingresa tu clave. De lo contrario, HiDoc opera con su base de triaje pediátrico offline 100% autónoma.
           </p>
           <div style={{ display: 'flex', gap: 8 }}>
             <input
@@ -3635,7 +3635,7 @@ function ModalMarcaBlanca({ marcaBlanca, onGuardar, onClose }) {
         </div>
 
         <p style={{ fontSize: 13, color: '#8A7F77', lineHeight: 1.5, marginBottom: 16 }}>
-          Adapta HiDoctor con la identidad visual y canales directos de tu clínica, hospital o consulta pediátrica privada para ofrecerlo a tus pacientes o inversores.
+          Adapta HiDoc con la identidad visual y canales directos de tu clínica, hospital o consulta pediátrica privada para ofrecerlo a tus pacientes o inversores.
         </p>
 
         {/* Demo Rápido para Compradores / Inversores */}
@@ -3842,7 +3842,7 @@ function ModalPlanesPremium({ esPremiumActivo, onTogglePremium, onAbrirMarcaBlan
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 24 }}>⭐</span>
             <h2 style={{ fontSize: 19, color: '#2D2926', margin: 0, fontWeight: 800 }}>
-              HiDoctor — Planes & Monetización
+              HiDoc — Planes & Monetización
             </h2>
           </div>
           <button
