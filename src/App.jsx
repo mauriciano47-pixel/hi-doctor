@@ -553,6 +553,24 @@ export default function App() {
   });
   const [mostrarModalMarcaBlanca, setMostrarModalMarcaBlanca] = useState(false);
 
+  // Estado de Monetización B2C SaaS / Suscripción Familiar Premium
+  const [mostrarModalPremium, setMostrarModalPremium] = useState(false);
+  const [esPremiumActivo, setEsPremiumActivo] = useState(() => {
+    try {
+      return window.localStorage.getItem('hidoctor_premium_activo') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  function togglePremiumPrueba() {
+    const nuevo = !esPremiumActivo;
+    setEsPremiumActivo(nuevo);
+    try {
+      window.localStorage.setItem('hidoctor_premium_activo', String(nuevo));
+    } catch (err) { void err; }
+  }
+
   function guardarMarcaBlanca(nuevaConfig) {
     setMarcaBlanca(nuevaConfig);
     try {
@@ -761,6 +779,26 @@ export default function App() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <button
+            onClick={() => setMostrarModalPremium(true)}
+            style={{
+              background: esPremiumActivo ? 'linear-gradient(135deg, #F2A65A, #E07A5F)' : COLORS.white,
+              color: esPremiumActivo ? '#FFF' : '#C4624A',
+              border: '1.5px solid #F2A65A',
+              borderRadius: 8,
+              padding: '6px 9px',
+              fontSize: 11.5,
+              cursor: 'pointer',
+              fontWeight: 800,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4
+            }}
+            title="Ver planes de suscripción familiar y monetización B2C"
+            aria-label="Abrir planes de monetización"
+          >
+            ⭐ {esPremiumActivo ? 'Pro Activo' : 'Planes / SaaS'}
+          </button>
           <button
             onClick={() => setMostrarModalMarcaBlanca(true)}
             style={{
@@ -1041,6 +1079,25 @@ export default function App() {
           >
             🏥 {marcaBlanca?.activo ? 'Clínica Activa' : 'Modo Clínica B2B'}
           </button>
+          <button
+            onClick={() => setMostrarModalPremium(true)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              fontSize: 12,
+              fontWeight: 700,
+              color: '#C4624A',
+              background: '#FFF4EE',
+              border: '1px solid #F2A65A',
+              borderRadius: 20,
+              padding: '5px 12px',
+              cursor: 'pointer'
+            }}
+            aria-label="Ver planes de suscripción familiar y monetización"
+          >
+            ⭐ {esPremiumActivo ? 'Plan Pro Activo' : 'Planes & Precios B2C'}
+          </button>
         </div>
         <p style={{
           fontSize: 11.5,
@@ -1058,6 +1115,19 @@ export default function App() {
           marcaBlanca={marcaBlanca}
           onGuardar={guardarMarcaBlanca}
           onClose={() => setMostrarModalMarcaBlanca(false)}
+        />
+      )}
+
+      {/* Modal de Planes y Monetización B2C SaaS */}
+      {mostrarModalPremium && (
+        <ModalPlanesPremium
+          esPremiumActivo={esPremiumActivo}
+          onTogglePremium={togglePremiumPrueba}
+          onAbrirMarcaBlanca={() => {
+            setMostrarModalPremium(false);
+            setMostrarModalMarcaBlanca(true);
+          }}
+          onClose={() => setMostrarModalPremium(false)}
         />
       )}
 
@@ -1215,6 +1285,47 @@ function FormularioExpedienteHospitalario({ perfilInicial, esOnboarding, onGuard
         </div>
         <span style={{ fontSize: 11, color: COLORS.inkLight, fontWeight: 700 }}>EMR Pro</span>
       </div>
+
+      {/* Banner para Exploración Inmediata de Inversores y Médicos */}
+      {esOnboarding && onCargarDemo && (
+        <div style={{
+          background: 'linear-gradient(135deg, #FFF0EA, #FFE5D9)',
+          border: '2px solid #E07A5F',
+          borderRadius: 14,
+          padding: '14px 16px',
+          marginBottom: 18,
+          textAlign: 'center',
+          boxShadow: '0 4px 14px rgba(224, 122, 95, 0.15)'
+        }}>
+          <span style={{ fontSize: 13, fontWeight: 800, color: '#C4624A', display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            ⚡ Modo Explorador / Demostración en 1 Clic
+          </span>
+          <p style={{ fontSize: 12.5, color: COLORS.ink, margin: '0 0 10px', lineHeight: 1.4 }}>
+            ¿Eres inversor, médico o deseas auditar la app de inmediato sin rellenar datos?
+          </p>
+          <button
+            type="button"
+            onClick={onCargarDemo}
+            style={{
+              ...S.btn,
+              background: '#2A9D8F',
+              color: '#FFF',
+              border: 'none',
+              padding: '10px 18px',
+              fontSize: 13,
+              fontWeight: 700,
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              cursor: 'pointer'
+            }}
+          >
+            🧪 Entrar Directo con Caso Clínico Completo (Sofía, 3 años)
+          </button>
+        </div>
+      )}
 
       <div style={{ textAlign: 'center', marginBottom: 18 }}>
         <div style={{ fontSize: 40, marginBottom: 4 }}>📋</div>
@@ -3692,6 +3803,255 @@ function ModalMarcaBlanca({ marcaBlanca, onGuardar, onClose }) {
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  );
+}
+
+// ---------- Modal de Planes y Monetización B2C SaaS / Suscripción Familiar ----------
+function ModalPlanesPremium({ esPremiumActivo, onTogglePremium, onAbrirMarcaBlanca, onClose }) {
+  const [periodo, setPeriodo] = useState('anual'); // mensual | anual
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: 'rgba(0,0,0,0.65)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 16,
+      zIndex: 9999,
+      backdropFilter: 'blur(4px)'
+    }}>
+      <div style={{
+        background: '#FFF7F0',
+        borderRadius: 18,
+        padding: 24,
+        maxWidth: 520,
+        width: '100%',
+        boxShadow: '0 24px 48px rgba(0,0,0,0.25)',
+        border: '2.5px solid #F2A65A',
+        maxHeight: '92vh',
+        overflowY: 'auto'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 24 }}>⭐</span>
+            <h2 style={{ fontSize: 19, color: '#2D2926', margin: 0, fontWeight: 800 }}>
+              HiDoctor — Planes & Monetización
+            </h2>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              fontSize: 20,
+              cursor: 'pointer',
+              color: '#8A7F77',
+              padding: 4
+            }}
+            aria-label="Cerrar modal de planes"
+          >
+            ✕
+          </button>
+        </div>
+
+        <p style={{ fontSize: 13, color: '#8A7F77', lineHeight: 1.5, margin: '0 0 16px' }}>
+          Modelo SaaS con margen bruto superior al 95%: suscripción familiar recurrente para padres y licenciamiento B2B llave en mano para clínicas pediátricas.
+        </p>
+
+        {/* Selector Mensual / Anual */}
+        <div style={{
+          display: 'flex',
+          background: '#F0E4DA',
+          borderRadius: 10,
+          padding: 3,
+          marginBottom: 16,
+          justifyContent: 'center'
+        }}>
+          <button
+            type="button"
+            onClick={() => setPeriodo('mensual')}
+            style={{
+              flex: 1,
+              padding: '7px 12px',
+              borderRadius: 8,
+              border: 'none',
+              background: periodo === 'mensual' ? '#FFF' : 'transparent',
+              color: periodo === 'mensual' ? '#2D2926' : '#8A7F77',
+              fontWeight: 700,
+              fontSize: 12.5,
+              cursor: 'pointer'
+            }}
+          >
+            Facturación Mensual
+          </button>
+          <button
+            type="button"
+            onClick={() => setPeriodo('anual')}
+            style={{
+              flex: 1,
+              padding: '7px 12px',
+              borderRadius: 8,
+              border: 'none',
+              background: periodo === 'anual' ? '#FFF' : 'transparent',
+              color: periodo === 'anual' ? '#2D2926' : '#8A7F77',
+              fontWeight: 700,
+              fontSize: 12.5,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6
+            }}
+          >
+            Anual (Ahorra 33%) <span style={{ background: '#2A9D8F', color: '#FFF', fontSize: 10, padding: '1px 5px', borderRadius: 4 }}>OFERTA</span>
+          </button>
+        </div>
+
+        {/* Tarjetas de Planes */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+          {/* Plan Básico */}
+          <div style={{
+            background: '#FFFFFF',
+            border: '1.5px solid #E5D5C8',
+            borderRadius: 12,
+            padding: 14,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between'
+          }}>
+            <div>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#8A7F77', textTransform: 'uppercase' }}>Comunitario</span>
+              <h3 style={{ fontSize: 16, margin: '4px 0', color: '#2D2926' }}>Plan Gratuito</h3>
+              <div style={{ fontSize: 20, fontWeight: 800, color: '#2D2926', marginBottom: 10 }}>
+                $0 <span style={{ fontSize: 11, fontWeight: 500, color: '#8A7F77' }}>/ siempre</span>
+              </div>
+              <ul style={{ margin: 0, paddingLeft: 16, fontSize: 11.5, color: '#555', lineHeight: 1.6 }}>
+                <li>1 perfil pediátrico</li>
+                <li>Curva térmica vectorial SVG</li>
+                <li>Dosis por peso en kg</li>
+                <li>Directorio 9 países</li>
+              </ul>
+            </div>
+            <div style={{ marginTop: 12, fontSize: 11, color: '#2A9D8F', fontWeight: 700, textAlign: 'center' }}>
+              ✓ Activo por defecto
+            </div>
+          </div>
+
+          {/* Plan Familiar Pro */}
+          <div style={{
+            background: 'linear-gradient(135deg, #FFF9F5, #FFF0EA)',
+            border: '2px solid #E07A5F',
+            borderRadius: 12,
+            padding: 14,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            boxShadow: '0 4px 14px rgba(224, 122, 95, 0.15)',
+            position: 'relative'
+          }}>
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 11, fontWeight: 800, color: '#E07A5F', textTransform: 'uppercase' }}>Familiar</span>
+                <span style={{ background: '#E07A5F', color: '#FFF', fontSize: 9.5, padding: '2px 6px', borderRadius: 10, fontWeight: 800 }}>POPULAR</span>
+              </div>
+              <h3 style={{ fontSize: 16, margin: '4px 0', color: '#2D2926' }}>Familiar Pro</h3>
+              <div style={{ fontSize: 22, fontWeight: 800, color: '#E07A5F', marginBottom: 10 }}>
+                {periodo === 'mensual' ? '$4.99' : '$3.33'} <span style={{ fontSize: 11, fontWeight: 500, color: '#8A7F77' }}>USD/mes</span>
+              </div>
+              <ul style={{ margin: 0, paddingLeft: 16, fontSize: 11.5, color: '#333', lineHeight: 1.6 }}>
+                <li><strong>Perfiles ilimitados</strong> (hermanos)</li>
+                <li><strong>Doctor IA</strong> consultas 24/7</li>
+                <li><strong>Exportación PDF A4</strong> médica</li>
+                <li>Envío directo a WhatsApp</li>
+                <li>Detección de patrones críticos</li>
+              </ul>
+            </div>
+            <button
+              type="button"
+              onClick={onTogglePremium}
+              style={{
+                marginTop: 12,
+                background: esPremiumActivo ? '#2A9D8F' : '#E07A5F',
+                color: '#FFF',
+                border: 'none',
+                borderRadius: 8,
+                padding: '8px 12px',
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer',
+                width: '100%'
+              }}
+            >
+              {esPremiumActivo ? '✓ Premium Activado (Demo)' : '🚀 Probar 7 Días Gratis'}
+            </button>
+          </div>
+        </div>
+
+        {/* Bloque B2B / Institucional para Clínicas */}
+        <div style={{
+          background: '#E8F5F3',
+          border: '1.5px solid #2A9D8F',
+          borderRadius: 12,
+          padding: '12px 14px',
+          marginBottom: 16,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 10
+        }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontSize: 16 }}>🏥</span>
+              <strong style={{ fontSize: 13, color: '#1B4332' }}>Licencia B2B Institucional (Marca Blanca)</strong>
+            </div>
+            <p style={{ fontSize: 11.5, color: '#2D2926', margin: '3px 0 0', lineHeight: 1.4 }}>
+              Para clínicas privadas y aseguradoras: despliega la app con tu propio logotipo, teléfono y agenda por <strong>$3.500 USD / $3.2M CLP</strong>.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onAbrirMarcaBlanca}
+            style={{
+              background: '#2A9D8F',
+              color: '#FFF',
+              border: 'none',
+              borderRadius: 6,
+              padding: '6px 12px',
+              fontSize: 11.5,
+              fontWeight: 700,
+              cursor: 'pointer'
+            }}
+          >
+            Configurar Marca Blanca
+          </button>
+        </div>
+
+        <div style={{ textAlign: 'center' }}>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              background: 'transparent',
+              border: '1px solid #CCC',
+              borderRadius: 8,
+              padding: '8px 20px',
+              fontSize: 12.5,
+              color: '#8A7F77',
+              cursor: 'pointer',
+              fontWeight: 600
+            }}
+          >
+            Volver a la App
+          </button>
+        </div>
       </div>
     </div>
   );
