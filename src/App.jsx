@@ -123,8 +123,12 @@ const TIPOS_LUGAR = {
   doctors: '👨‍⚕️ Consultorio',
 };
 
-// Datos clínicos iniciales de demostración para evaluación inmediata en Vitrina
+// Datos clínicos iniciales de demostración: Cohorte de 4 Pacientes Pediátricos Multidimensionales
 const DEMO_PACIENTE_ID = 'paciente-demo-sofia';
+const DEMO_PACIENTE_MATEO_ID = 'paciente-demo-mateo';
+const DEMO_PACIENTE_LUCAS_ID = 'paciente-demo-lucas';
+const DEMO_PACIENTE_EMMA_ID = 'paciente-demo-emma';
+
 const DEMO_DATA = {
   tutor: 'Mauricio Uribe Maldonado',
   pais: 'Chile',
@@ -152,11 +156,84 @@ const DEMO_DATA = {
       seguroSalud: 'Fonasa / Complementario',
       centroSalud: 'Clínica Santa María / Urgencia Infantil',
       creado: new Date(Date.now() - 86400000 * 2).toISOString(),
-    }
+    },
+    {
+      id: DEMO_PACIENTE_MATEO_ID,
+      codigoExpediente: 'HC-PED-2026-1102',
+      nombre: 'Mateo González',
+      alias: 'Mateito',
+      fechaNacimiento: new Date(Date.now() - 86400000 * 30 * 8).toISOString().slice(0, 10),
+      edadTexto: '8 meses',
+      grupoEtario: 'Lactante Menor (1 a 12 meses)',
+      sexo: 'Masculino',
+      pesoKg: 8.5,
+      tallaCm: 71,
+      imc: '16.9',
+      clasificacionIMC: 'Eutrófico / Adecuado para la edad',
+      grupoSanguineo: 'O+',
+      alergias: [],
+      antecedentes: ['Recién nacido a término (39 sem)'],
+      vacunasAlDia: true,
+      tutor: 'Mauricio Uribe Maldonado',
+      parentesco: 'Padre',
+      telefonoUrgencia: '+56 9 8765 4321',
+      seguroSalud: 'Isapre Colmena',
+      centroSalud: 'Hospital Clínico Pediátrico',
+      creado: new Date(Date.now() - 86400000 * 1).toISOString(),
+    },
+    {
+      id: DEMO_PACIENTE_LUCAS_ID,
+      codigoExpediente: 'HC-PED-2026-7731',
+      nombre: 'Lucas Navarrete',
+      alias: 'Luquitas',
+      fechaNacimiento: new Date(Date.now() - 86400000 * 365 * 6.1).toISOString().slice(0, 10),
+      edadTexto: '6 años 1 mes',
+      grupoEtario: 'Escolar (6 a 11 años)',
+      sexo: 'Masculino',
+      pesoKg: 21,
+      tallaCm: 116,
+      imc: '15.6',
+      clasificacionIMC: 'Rango saludable / Eutrófico',
+      grupoSanguineo: 'B+',
+      alergias: ['Penicilina / Amoxicilina'],
+      antecedentes: ['Asma infantil leve', 'Rinitis estacional'],
+      vacunasAlDia: true,
+      tutor: 'Mauricio Uribe Maldonado',
+      parentesco: 'Padre',
+      telefonoUrgencia: '+56 9 8765 4321',
+      seguroSalud: 'Banmédica',
+      centroSalud: 'Clínica Alemana / Pediatría',
+      creado: new Date(Date.now() - 86400000 * 3).toISOString(),
+    },
+    {
+      id: DEMO_PACIENTE_EMMA_ID,
+      codigoExpediente: 'HC-PED-2026-9042',
+      nombre: 'Emma Silva',
+      alias: 'Emmita',
+      fechaNacimiento: new Date(Date.now() - 86400000 * 30 * 16).toISOString().slice(0, 10),
+      edadTexto: '1 año 4 meses',
+      grupoEtario: 'Lactante Mayor (1 a 2 años)',
+      sexo: 'Femenino',
+      pesoKg: 11,
+      tallaCm: 81,
+      imc: '16.8',
+      clasificacionIMC: 'Nutrición adecuada',
+      grupoSanguineo: 'AB+',
+      alergias: ['Proteína Leche Vaca (APLV)'],
+      antecedentes: ['Control gastroenterológico infantil'],
+      vacunasAlDia: true,
+      tutor: 'Mauricio Uribe Maldonado',
+      parentesco: 'Padre',
+      telefonoUrgencia: '+56 9 8765 4321',
+      seguroSalud: 'Fonasa Tramo D',
+      centroSalud: 'Hospital Exequiel González Cortés',
+      creado: new Date(Date.now() - 86400000 * 2).toISOString(),
+    },
   ],
   registros: [
+    // --- 1. REGISTROS SOFÍA (Síndrome Febril Agudo / Faringitis) ---
     {
-      id: 'reg-demo-1',
+      id: 'reg-demo-sofia-1',
       perfilId: DEMO_PACIENTE_ID,
       fecha: new Date(Date.now() - 1000 * 60 * 60 * 22).toISOString(),
       sintomas: ['Congestión nasal', 'Decaimiento'],
@@ -167,13 +244,13 @@ const DEMO_DATA = {
       medicamento: null,
     },
     {
-      id: 'reg-demo-2',
+      id: 'reg-demo-sofia-2',
       perfilId: DEMO_PACIENTE_ID,
       fecha: new Date(Date.now() - 1000 * 60 * 60 * 13).toISOString(),
       sintomas: ['Fiebre', 'Tos', 'Pérdida de apetito'],
       fiebre: true,
       temperatura: '38.6',
-      nota: 'Temperatura elevada en la noche. Se administró antipirético según indicación.',
+      nota: 'Temperatura elevada en la noche. Se administró Paracetamol 8.7 ml (Ibuprofeno contraindicado por alergia).',
       foto: null,
       medicamento: {
         nombre: 'Paracetamol Jarabe (120 mg/5 ml)',
@@ -184,13 +261,142 @@ const DEMO_DATA = {
       },
     },
     {
-      id: 'reg-demo-3',
+      id: 'reg-demo-sofia-3',
       perfilId: DEMO_PACIENTE_ID,
       fecha: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(),
       sintomas: ['Fiebre', 'Tos'],
       fiebre: true,
       temperatura: '38.1',
       nota: 'Fiebre cediendo con hidratación y ropa ligera. Sigue con tos.',
+      foto: null,
+      medicamento: null,
+    },
+
+    // --- 2. REGISTROS MATEO (Lactante 8m / Fiebre Vacunal & Dentición) ---
+    {
+      id: 'reg-demo-mateo-1',
+      perfilId: DEMO_PACIENTE_MATEO_ID,
+      fecha: new Date(Date.now() - 1000 * 60 * 60 * 18).toISOString(),
+      sintomas: ['Irritabilidad', 'Dolor o molestia'],
+      fiebre: false,
+      temperatura: '37.4',
+      nota: 'Babeo constante e irritabilidad por brote de incisivos inferiores.',
+      foto: null,
+      medicamento: null,
+    },
+    {
+      id: 'reg-demo-mateo-2',
+      perfilId: DEMO_PACIENTE_MATEO_ID,
+      fecha: new Date(Date.now() - 1000 * 60 * 60 * 10).toISOString(),
+      sintomas: ['Fiebre', 'Irritabilidad'],
+      fiebre: true,
+      temperatura: '38.3',
+      nota: 'Pico febril post-vacunal. Se administran 26 gotas de Paracetamol según peso (8.5 kg).',
+      foto: null,
+      medicamento: {
+        nombre: 'Paracetamol Gotas (100 mg/ml)',
+        dosis: '1.3',
+        unidad: 'ml',
+        intervaloHoras: 6,
+        ultimaHora: new Date(Date.now() - 1000 * 60 * 60 * 10).toISOString(),
+      },
+    },
+    {
+      id: 'reg-demo-mateo-3',
+      perfilId: DEMO_PACIENTE_MATEO_ID,
+      fecha: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
+      sintomas: ['Sin síntomas agudos'],
+      fiebre: false,
+      temperatura: '37.1',
+      nota: 'Afebril, descansando plácidamente, buena succión al amamantar.',
+      foto: null,
+      medicamento: null,
+    },
+
+    // --- 3. REGISTROS LUCAS (Escolar 6a / Bronquitis Obstructiva & Asma) ---
+    {
+      id: 'reg-demo-lucas-1',
+      perfilId: DEMO_PACIENTE_LUCAS_ID,
+      fecha: new Date(Date.now() - 1000 * 60 * 60 * 36).toISOString(),
+      sintomas: ['Tos', 'Dificultad respiratoria'],
+      fiebre: false,
+      temperatura: '37.2',
+      nota: 'Tos seca nocturna con silbido audible al exhalar.',
+      foto: null,
+      medicamento: {
+        nombre: 'Salbutamol Inhalador (100 mcg)',
+        dosis: '2',
+        unidad: 'puffs',
+        intervaloHoras: 6,
+        ultimaHora: new Date(Date.now() - 1000 * 60 * 60 * 36).toISOString(),
+      },
+    },
+    {
+      id: 'reg-demo-lucas-2',
+      perfilId: DEMO_PACIENTE_LUCAS_ID,
+      fecha: new Date(Date.now() - 1000 * 60 * 60 * 20).toISOString(),
+      sintomas: ['Fiebre', 'Tos'],
+      fiebre: true,
+      temperatura: '38.5',
+      nota: 'Fiebre alta con malestar corporal. Dosis de Ibuprofeno calculada para 21 kg.',
+      foto: null,
+      medicamento: {
+        nombre: 'Ibuprofeno Suspensión (100 mg/5 ml)',
+        dosis: '10.5',
+        unidad: 'ml',
+        intervaloHoras: 8,
+        ultimaHora: new Date(Date.now() - 1000 * 60 * 60 * 20).toISOString(),
+      },
+    },
+    {
+      id: 'reg-demo-lucas-3',
+      perfilId: DEMO_PACIENTE_LUCAS_ID,
+      fecha: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
+      sintomas: ['Tos'],
+      fiebre: false,
+      temperatura: '36.8',
+      nota: 'Ventilación pulmonar limpia tras broncodilatador. Sin dificultad para respirar.',
+      foto: null,
+      medicamento: null,
+    },
+
+    // --- 4. REGISTROS EMMA (Lactante Mayor 1a 4m / Cuadro Gastrointestinal) ---
+    {
+      id: 'reg-demo-emma-1',
+      perfilId: DEMO_PACIENTE_EMMA_ID,
+      fecha: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+      sintomas: ['Vómitos', 'Pérdida de apetito'],
+      fiebre: false,
+      temperatura: '37.3',
+      nota: 'Presentó 2 episodios de vómito. Iniciada pausa gástrica de 30 minutos.',
+      foto: null,
+      medicamento: null,
+    },
+    {
+      id: 'reg-demo-emma-2',
+      perfilId: DEMO_PACIENTE_EMMA_ID,
+      fecha: new Date(Date.now() - 1000 * 60 * 60 * 14).toISOString(),
+      sintomas: ['Diarrea', 'Decaimiento'],
+      fiebre: true,
+      temperatura: '38.0',
+      nota: 'Una deposición semilíquida. Administradas Sales de Rehidratación Oral (SRO) 60 ml a sorbos lentos.',
+      foto: null,
+      medicamento: {
+        nombre: 'Sales de Rehidratación Oral (SRO)',
+        dosis: '60',
+        unidad: 'ml',
+        intervaloHoras: 4,
+        ultimaHora: new Date(Date.now() - 1000 * 60 * 60 * 14).toISOString(),
+      },
+    },
+    {
+      id: 'reg-demo-emma-3',
+      perfilId: DEMO_PACIENTE_EMMA_ID,
+      fecha: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(),
+      sintomas: ['Sin síntomas agudos'],
+      fiebre: false,
+      temperatura: '36.9',
+      nota: 'Buena diuresis (pañal mojado), ojos hidratados, llanto con lágrimas. Afebril.',
       foto: null,
       medicamento: null,
     },
@@ -684,18 +890,19 @@ export default function App() {
   }
 
   function cargarCasoDemoSinBorrar() {
-    const sofiaExiste = perfiles.find(p => p.id === DEMO_PACIENTE_ID);
-    if (sofiaExiste) {
-      setPerfilActivoId(DEMO_PACIENTE_ID);
-      cambiarVista('registro');
-      return;
-    }
+    const perfilesExistentes = data.perfiles || [];
+    const perfilesNuevos = DEMO_DATA.perfiles.filter(
+      dp => !perfilesExistentes.some(ep => ep.id === dp.id)
+    );
+    const registrosExistentes = data.registros || [];
+    const registrosNuevos = DEMO_DATA.registros.filter(
+      dr => !registrosExistentes.some(er => er.id === dr.id)
+    );
 
-    const demoPerfil = DEMO_DATA.perfiles[0];
     const nuevaData = {
       ...data,
-      perfiles: [...(data.perfiles || []), demoPerfil],
-      registros: [...(data.registros || []), ...DEMO_DATA.registros],
+      perfiles: [...perfilesExistentes, ...perfilesNuevos],
+      registros: [...registrosExistentes, ...registrosNuevos],
       contactos: data.contactos && data.contactos.length > 0 ? data.contactos : DEMO_DATA.contactos,
     };
 
@@ -707,6 +914,27 @@ export default function App() {
     } catch (err) { void err; }
     setOnboardingCompletado(true);
     cambiarVista('registro');
+  }
+
+  function simularEvolucionClinica() {
+    if (!perfilActivo) return;
+    const ahora = new Date();
+    const tempNum = (36.7 + Math.random() * 0.8).toFixed(1);
+    const nuevoRegistro = {
+      id: uid(),
+      perfilId: perfilActivo.id,
+      fecha: ahora.toISOString(),
+      sintomas: ['Control de seguimiento', 'Tolerancia oral adecuada'],
+      fiebre: parseFloat(tempNum) >= 38.0,
+      temperatura: tempNum,
+      nota: `Evolución clínica simulada (${ahora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}): Paciente hidratado, afebril y en recuperación favorable. Flujo dinámico verificado.`,
+      foto: null,
+      medicamento: null,
+    };
+    setData(d => ({
+      ...d,
+      registros: [...(d.registros || []), nuevoRegistro]
+    }));
   }
 
   function agregarRegistro(registro) {
@@ -855,10 +1083,27 @@ export default function App() {
               cursor: 'pointer',
               fontWeight: 600
             }}
-            title="Explorar caso de prueba sin alterar tus datos"
-            aria-label="Cargar caso clínico de prueba"
+            title="Cargar cohorte de 4 casos clínicos pediátricos (Sofía, Mateo, Lucas, Emma)"
+            aria-label="Cargar casos clínicos de prueba"
           >
-            🔄 Caso Demo
+            🧪 4 Casos Clínicos
+          </button>
+          <button
+            onClick={simularEvolucionClinica}
+            style={{
+              background: 'rgba(42, 157, 143, 0.1)',
+              border: '1px solid #2A9D8F',
+              borderRadius: 8,
+              padding: '6px 9px',
+              fontSize: 11.5,
+              color: '#2A9D8F',
+              cursor: 'pointer',
+              fontWeight: 700
+            }}
+            title="Simular un nuevo registro clínico hoy para alimentar la curva térmica en tiempo real"
+            aria-label="Simular nuevo registro clínico hoy"
+          >
+            ⚡ +1 Registro Hoy
           </button>
         </div>
       </header>
@@ -1322,7 +1567,7 @@ function FormularioExpedienteHospitalario({ perfilInicial, esOnboarding, onGuard
               cursor: 'pointer'
             }}
           >
-            🧪 Entrar Directo con Caso Clínico Completo (Sofía, 3 años)
+            🧪 Entrar Directo con 4 Casos Clínicos de Prueba (Cohorte Completo)
           </button>
         </div>
       )}
@@ -1719,7 +1964,7 @@ function FormularioExpedienteHospitalario({ perfilInicial, esOnboarding, onGuard
               onClick={onCargarDemo}
               style={{ ...S.btnOutline, width: '100%', padding: '11px 16px', fontSize: 13, background: COLORS.white }}
             >
-              👀 Explorar con Expediente de Demostración (Sofía Uribe, 3 años)
+              👀 Explorar con 4 Casos Clínicos de Demostración (Cohorte Pediátrico)
             </button>
           </div>
         )}
