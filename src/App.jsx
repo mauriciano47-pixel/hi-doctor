@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import SplashScreenHiDoc from './SplashScreenHiDoc';
+import LobbyRegistroHiDoc from './LobbyRegistroHiDoc';
 
 const COLORS = {
   cream: '#FFF7F0',
@@ -705,6 +707,26 @@ const STORAGE_KEY = 'bitacora-sintomas-data-v1';
 export default function App() {
   useFonts();
 
+  // 1. Pantalla de Bienvenida / Splash Screen de 3 segundos
+  const [mostrarSplash, setMostrarSplash] = useState(true);
+
+  // 2. Sesión del Tutor / Usuario Autenticado (Google o Correo Alternativo)
+  const [usuarioAutenticado, setUsuarioAutenticado] = useState(() => {
+    try {
+      const sesion = window.localStorage.getItem('hidoctor_usuario_sesion');
+      return sesion ? JSON.parse(sesion) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setMostrarSplash(false);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
   const [onboardingCompletado, setOnboardingCompletado] = useState(() => {
     try {
       return window.localStorage.getItem('hidoctor_onboarding_completado') === 'true';
@@ -969,7 +991,32 @@ export default function App() {
     setMostrarForm(true);
   }
 
-  // Si es un usuario nuevo o sin registros previos, mostrar el Expediente Hospitalario con Auto-Save
+  // 1. Pantalla de Bienvenida / Splash Screen de 3 segundos
+  if (mostrarSplash) {
+    return <SplashScreenHiDoc onSaltar={() => setMostrarSplash(false)} />;
+  }
+
+  // 2. Lobby de Registro / Inicio de Sesión Familiar (Google o Correo Alternativo)
+  if (!usuarioAutenticado) {
+    return (
+      <LobbyRegistroHiDoc
+        onLoginExitoso={(usuario) => {
+          setUsuarioAutenticado(usuario);
+          try {
+            window.localStorage.setItem('hidoctor_usuario_sesion', JSON.stringify(usuario));
+            window.localStorage.setItem('hidoctor_onboarding_completado', 'true');
+          } catch (err) { void err; }
+          setOnboardingCompletado(true);
+          // Si no tiene perfiles cargados, precargar el cohorte clínico para que la experiencia sea completa
+          if (!data.perfiles || data.perfiles.length === 0) {
+            cargarCasoDemoSinBorrar();
+          }
+        }}
+      />
+    );
+  }
+
+  // 3. Si es un usuario nuevo o sin registros previos, mostrar el Expediente Hospitalario con Auto-Save
   if (!onboardingCompletado || perfiles.length === 0) {
     return (
       <div style={S.app}>
@@ -1005,6 +1052,34 @@ export default function App() {
               'Expediente Pediátrico Hospitalario & Doctor IA'
             )}
           </p>
+          {usuarioAutenticado && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 }}>
+              <span style={{ fontSize: 11, color: COLORS.inkLight, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                {usuarioAutenticado.proveedor === 'google' ? '🟢 Google:' : '👤'} <strong>{usuarioAutenticado.nombre.split(' ')[0]}</strong>
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    window.localStorage.removeItem('hidoctor_usuario_sesion');
+                  } catch (err) { void err; }
+                  setUsuarioAutenticado(null);
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: COLORS.sageDark,
+                  fontSize: 10.5,
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                  padding: 0
+                }}
+                title="Cerrar sesión familiar y volver al lobby"
+              >
+                (Salir)
+              </button>
+            </div>
+          )}
         </div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           <button
