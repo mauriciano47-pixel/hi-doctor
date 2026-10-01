@@ -1,16 +1,26 @@
-# React + Vite
+# 🩺 HiDoc (HiDoctor) — Bitácora Pediátrica Inteligente con Triaje por IA
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> **Bitácora Clínica Pediátrica Inteligente con Triaje por IA (Doctor IA & Triaje Pediátrico)**. Acompaña a padres minuto a minuto: seguimiento de fiebre con curva térmica vectorial SVG, registro de síntomas y medicamentos, calculadora de dosis por peso, triaje clínico dual (asistente Doctor IA con Gemini y fallback offline-first autónomo) y directorio de emergencias para 9 países.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🌐 Producción & Enlaces Oficiales
 
-## React Compiler
+- **Producción Oficial (Cloudflare Pages):** [https://hidoc.pages.dev](https://hidoc.pages.dev)
+- **Producción Espejo (GitHub Pages):** [https://mauriciano47-pixel.github.io/hi-doctor/](https://mauriciano47-pixel.github.io/hi-doctor/)
+- **Portal PWA de Instalación:** [https://hidoc.pages.dev/download.html](https://hidoc.pages.dev/download.html)
+- **Showcase Vitrina:** [https://mauriciano47-pixel.github.io/vitrina/](https://mauriciano47-pixel.github.io/vitrina/)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## ⚡ Stack Tecnológico
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- **Frontend:** React 19 + Vite 8
+- **Estilos:** Cyber-Obsidian Royal / Paleta Pediátrica Empática (Cream, Sage, Terracotta, Emerald)
+- **Motor IA:** Google Gemini 1.5 Flash + Triaje Autónomo Offline (Fallback Local)
+- **Arquitectura:** Offline-First PWA con SafeStorage / localStorage
+- **Hosting:** Cloudflare Pages (CDN Global & SSL Automático) + GitHub Pages
+
+---
+
+© 2026 **Mauricio Uribe Maldonado**. Todos los derechos reservados.
