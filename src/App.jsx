@@ -1,6 +1,14 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import SplashScreenHiDoc from './SplashScreenHiDoc';
 import LobbyRegistroHiDoc from './LobbyRegistroHiDoc';
+import {
+  TAXONOMIA_AINES,
+  normalizarCadenaClinica,
+  detectarAlergiaCruzadaAINE,
+  FARMACOS_CONFIG,
+  PRESENTACIONES_DOSIS,
+  calcularDosisMilimetrica
+} from './utils/clinicalPharmacology';
 
 const COLORS = {
   cream: '#FFF7F0',
@@ -436,6 +444,15 @@ const ALERGIAS_COMUNES = [
   'Sulfas',
   'Polen / Ácaros',
 ];
+
+export {
+  TAXONOMIA_AINES,
+  normalizarCadenaClinica,
+  detectarAlergiaCruzadaAINE,
+  FARMACOS_CONFIG,
+  PRESENTACIONES_DOSIS,
+  calcularDosisMilimetrica
+};
 
 const ANTECEDENTES_COMUNES = [
   'Bronquiolitis recurrente',
@@ -2497,6 +2514,12 @@ function NuevoRegistroForm({ onGuardar, onCancelar, prefillMedicamento, nombrePa
         unidad: medUnidad,
         intervaloHoras: parseFloat(medIntervalo) || null,
         ultimaHora: new Date().toISOString(),
+        pesoBaseKg: prefillMedicamento?.pesoBaseKg || null,
+        dosisMg: prefillMedicamento?.dosisMg || null,
+        dosisTechoAplicada: Boolean(prefillMedicamento?.dosisTechoAplicada),
+        requiereConfirmacionMedica: prefillMedicamento?.requiereConfirmacionMedica ?? true,
+        descargoResponsabilidad: prefillMedicamento?.descargoResponsabilidad || 'Cálculo orientativo según peso registrado.',
+        proximaDosisEstimada: prefillMedicamento?.proximaDosisEstimada || null,
       } : null,
     };
     onGuardar(registro);
@@ -2578,6 +2601,23 @@ function NuevoRegistroForm({ onGuardar, onCancelar, prefillMedicamento, nombrePa
 
         {agregarMed && (
           <div style={{ marginTop: 10 }}>
+            {prefillMedicamento?.dosisTechoAplicada && (
+              <div style={{
+                background: '#FEF3C7',
+                border: '1px solid #F59E0B',
+                borderRadius: 8,
+                padding: '7px 10px',
+                marginBottom: 10,
+                fontSize: 11.5,
+                color: '#92400E',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6
+              }}>
+                <span>🛡️</span>
+                <span><strong>Dosis Techo Aplicada:</strong> Dosis ajustada al tope pediátrico seguro de {prefillMedicamento.dosisMg} mg para {prefillMedicamento.pesoBaseKg} kg.</span>
+              </div>
+            )}
             <label htmlFor="med-nombre" style={S.label}>Fármaco / Remedio</label>
             <input
               id="med-nombre"
@@ -2724,6 +2764,11 @@ function RegistroCard({ registro }) {
           borderLeft: `3px solid ${COLORS.sage}`
         }}>
           <strong>💊 {registro.medicamento.nombre}:</strong> {registro.medicamento.dosis} {registro.medicamento.unidad}
+          {registro.medicamento.dosisTechoAplicada && (
+            <span style={{ marginLeft: 6, fontSize: 10.5, background: '#FEF3C7', color: '#92400E', padding: '2px 6px', borderRadius: 4, fontWeight: 700 }}>
+              🛡️ Dosis Techo Segura
+            </span>
+          )}
           {proximaDosis && (
             <div style={{ marginTop: 2, fontSize: 11.5, color: COLORS.inkLight }}>
               ⏰ Próxima toma sugerida: <strong>{formatFecha(proximaDosis.toISOString())}</strong>
@@ -2804,33 +2849,19 @@ function VistaHistorial({ perfilActivo, registrosDelPerfil, eliminarRegistro, on
   );
 }
 
-// ---------- Calculadora Canónica de Dosis por Peso ----------
-const PRESENTACIONES_DOSIS = {
-  paracetamol: [
-    { id: 'gotas100', nombre: 'Gotas Pediátricas (100 mg/ml)', mgPorMl: 100, esGotas: true },
-    { id: 'jarabe120', nombre: 'Jarabe Pediátrico (120 mg / 5 ml) [24 mg/ml]', mgPorMl: 24, esGotas: false },
-    { id: 'jarabe160', nombre: 'Jarabe Pediátrico (160 mg / 5 ml) [32 mg/ml]', mgPorMl: 32, esGotas: false },
-    { id: 'jarabe250', nombre: 'Jarabe Forte (250 mg / 5 ml) [50 mg/ml]', mgPorMl: 50, esGotas: false },
-  ],
-  ibuprofeno: [
-    { id: 'jarabe100', nombre: 'Jarabe Infantil (100 mg / 5 ml) [20 mg/ml]', mgPorMl: 20, esGotas: false },
-    { id: 'jarabe200', nombre: 'Jarabe Forte (200 mg / 5 ml) [40 mg/ml]', mgPorMl: 40, esGotas: false },
-    { id: 'gotas40', nombre: 'Gotas Pediátricas (40 mg/ml)', mgPorMl: 40, esGotas: true },
-  ],
-};
-
+// ---------- Calculadora Canónica de Dosis por Peso (Motor importado de clinicalPharmacology.js) ----------
 function VistaCalculadoraDosis({ perfilActivo, onTransferirDosis }) {
   const [farmaco, setFarmaco] = useState('paracetamol'); // paracetamol | ibuprofeno
   const [pesoKg, setPesoKg] = useState(() => perfilActivo?.pesoKg ? String(perfilActivo.pesoKg) : '14');
   const [presentacion, setPresentacion] = useState('jarabe120');
+  const [confirmacionLeida, setConfirmacionLeida] = useState(false);
 
-  const alergiaIbuprofeno = useMemo(() => {
-    const alergias = perfilActivo?.alergias || [];
-    return alergias.some(a => {
-      const l = a.toLowerCase();
-      return l.includes('ibuprofeno') || l.includes('aine') || l.includes('antiinflamat');
-    });
-  }, [perfilActivo]);
+  // Detección avanzada de alergias y reactividad cruzada con taxonomía ATC M01A
+  const alergiaCruzada = useMemo(() => {
+    return detectarAlergiaCruzadaAINE(perfilActivo?.alergias);
+  }, [perfilActivo?.alergias]);
+
+  const bloqueadoPorAlergia = farmaco === 'ibuprofeno' && alergiaCruzada.tieneAlergia;
 
   const listaPres = PRESENTACIONES_DOSIS[farmaco] || PRESENTACIONES_DOSIS.paracetamol;
   const presActual = useMemo(() => {
@@ -2839,60 +2870,41 @@ function VistaCalculadoraDosis({ perfilActivo, onTransferirDosis }) {
 
   const pKg = Math.max(1, parseFloat(pesoKg) || 0);
 
-  // Paracetamol: 10 a 15 mg/kg cada 6-8h. Máx 60 mg/kg/día.
-  // Ibuprofeno: 5 a 10 mg/kg cada 8h. Máx 40 mg/kg/día. (>6 meses)
+  // Cálculo canónico con algoritmo farmacológico blindado
   const calculo = useMemo(() => {
-    if (farmaco === 'paracetamol') {
-      const minMg = (pKg * 10).toFixed(1);
-      const recMg = (pKg * 12.5).toFixed(1);
-      const maxMg = (pKg * 15).toFixed(1);
-      const mlPorToma = (recMg / presActual.mgPorMl).toFixed(1);
-      const gotasPorToma = Math.round(recMg / (presActual.mgPorMl / 24)); // aprox 24 gotas = 1 ml
-      return {
-        rangoMg: `${minMg} - ${maxMg} mg`,
-        dosisSugeridaMg: recMg,
-        dosisMl: mlPorToma,
-        dosisGotas: gotasPorToma,
-        intervalo: 'Cada 6 a 8 horas (máximo 4 tomas al día)',
-        aviso: 'Dosis máxima segura: 60 mg/kg en 24 horas. Usar siempre jeringa graduada.',
-      };
-    } else {
-      const minMg = (pKg * 5).toFixed(1);
-      const recMg = (pKg * 7.5).toFixed(1);
-      const maxMg = (pKg * 10).toFixed(1);
-      const mlPorToma = (recMg / presActual.mgPorMl).toFixed(1);
-      const gotasPorToma = Math.round(recMg / (presActual.mgPorMl / 24));
-      return {
-        rangoMg: `${minMg} - ${maxMg} mg`,
-        dosisSugeridaMg: recMg,
-        dosisMl: mlPorToma,
-        dosisGotas: gotasPorToma,
-        intervalo: 'Cada 8 horas (máximo 3 tomas al día)',
-        aviso: '⚠️ Solo para niños mayores de 6 meses o más de 5 kg de peso. No usar si hay deshidratación severa sin supervisión médica.',
-      };
-    }
+    return calcularDosisMilimetrica(pKg, farmaco, presActual.mgPorMl, presActual.esGotas);
   }, [farmaco, pKg, presActual]);
 
   function aplicarARegistro() {
-    if (farmaco === 'ibuprofeno' && alergiaIbuprofeno) return;
+    if (bloqueadoPorAlergia || !confirmacionLeida || !calculo.valido) return;
     onTransferirDosis({
-      nombre: `${farmaco === 'paracetamol' ? 'Paracetamol' : 'Ibuprofeno'} (${presActual.nombre})`,
+      nombre: `${calculo.farmaco} (${presActual.nombre})`,
       dosis: presActual.esGotas ? String(calculo.dosisGotas) : String(calculo.dosisMl),
       unidad: presActual.esGotas ? 'gotas' : 'ml',
-      intervaloHoras: farmaco === 'paracetamol' ? 8 : 8,
+      intervaloHoras: calculo.intervaloRecomendadoHoras,
+      pesoBaseKg: calculo.pesoBaseKg,
+      dosisMg: calculo.dosisMg,
+      dosisTechoAplicada: calculo.dosisTechoAplicada,
+      requiereConfirmacionMedica: calculo.requiereConfirmacionMedica,
+      descargoResponsabilidad: calculo.descargoResponsabilidad,
+      proximaDosisEstimada: calculo.proximaDosisEstimada,
+      maxDosisDiariaMg: calculo.maxDosisDiariaMg
     });
   }
-
-  const bloqueadoPorAlergia = farmaco === 'ibuprofeno' && alergiaIbuprofeno;
 
   return (
     <div>
       <div style={S.card}>
-        <h2 style={{ ...S.h2, fontSize: 17, marginBottom: 4 }}>
-          ⚖️ Calculadora Pediátrica de Dosis por Peso
-        </h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+          <h2 style={{ ...S.h2, fontSize: 17, margin: 0 }}>
+            ⚖️ Calculadora Pediátrica de Dosis por Peso
+          </h2>
+          <span style={{ fontSize: 11, background: '#E0F2FE', color: '#0369A1', padding: '3px 7px', borderRadius: 6, fontWeight: 700 }}>
+            Algoritmo ATC Safe v2.6.0
+          </span>
+        </div>
         <p style={{ fontSize: 13, color: COLORS.inkLight, margin: '0 0 16px', lineHeight: 1.5 }}>
-          La dosis pediátrica exacta se calcula estrictamente por el <strong>peso real en kg</strong>, no por la edad.
+          La dosificación pediátrica se calcula estrictamente por el <strong>peso real en kg</strong> con aplicación automática de <strong>dosis techo</strong> para evitar sobredosis.
         </p>
 
         {/* Selector de Fármaco */}
@@ -2913,32 +2925,32 @@ function VistaCalculadoraDosis({ perfilActivo, onTransferirDosis }) {
             style={{
               ...S.btn,
               flex: 1,
-              background: farmaco === 'ibuprofeno' ? (alergiaIbuprofeno ? COLORS.alert : COLORS.sage) : COLORS.white,
-              color: farmaco === 'ibuprofeno' ? COLORS.white : (alergiaIbuprofeno ? COLORS.alert : COLORS.ink),
-              border: `1.5px solid ${alergiaIbuprofeno ? COLORS.alert : COLORS.sage}`,
+              background: farmaco === 'ibuprofeno' ? (alergiaCruzada.tieneAlergia ? COLORS.alert : COLORS.sage) : COLORS.white,
+              color: farmaco === 'ibuprofeno' ? COLORS.white : (alergiaCruzada.tieneAlergia ? COLORS.alert : COLORS.ink),
+              border: `1.5px solid ${alergiaCruzada.tieneAlergia ? COLORS.alert : COLORS.sage}`,
             }}
             onClick={() => { setFarmaco('ibuprofeno'); setPresentacion('jarabe100'); }}
           >
-            🔥 Ibuprofeno {alergiaIbuprofeno ? '⚠️ (Alergia)' : ''}
+            🔥 Ibuprofeno {alergiaCruzada.tieneAlergia ? '⚠️ (Alergia Cruzada)' : ''}
           </button>
         </div>
 
-        {/* Alerta de Contraindicación por Alergias Clínicas */}
+        {/* Alerta de Contraindicación Médica Estricta por Taxonomía de Alergias */}
         {bloqueadoPorAlergia && (
           <div style={{
-            background: '#FFECEC',
-            border: '2px solid #E63946',
+            background: '#FFF1F2',
+            border: '2px solid #E11D48',
             borderRadius: 12,
             padding: '12px 14px',
             marginBottom: 16,
-            color: '#900C3F'
+            color: '#881337'
           }}>
             <div style={{ fontWeight: 800, fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
-              🚨 CONTRAINDICACIÓN MÉDICA CRÍTICA
+              🚨 CONTRAINDICACIÓN MÉDICA CRÍTICA (ATC M01A)
             </div>
-            <p style={{ fontSize: 12.5, margin: '6px 0 0', lineHeight: 1.4 }}>
-              <strong>{perfilActivo?.nombre}</strong> tiene registrada una <strong>Alergia a Ibuprofeno / AINEs</strong> en su Ficha Clínica.
-              No administre este fármaco. Utilice Paracetamol o consulte de urgencia con su pediatra.
+            <p style={{ fontSize: 12.5, margin: '6px 0 0', lineHeight: 1.45 }}>
+              <strong>{perfilActivo?.nombre}</strong> tiene registrada una alergia a <strong>&quot;{alergiaCruzada.coincidencia}&quot;</strong> en su Ficha Clínica.
+              Debido al riesgo severo de reactividad cruzada en la familia de Antiinflamatorios No Esteroideos (AINEs), la administración de <strong>Ibuprofeno queda bloqueada</strong> por seguridad clínica. Utilice Paracetamol previa indicación o consulte de urgencia a su pediatra.
             </p>
           </div>
         )}
@@ -2962,7 +2974,7 @@ function VistaCalculadoraDosis({ perfilActivo, onTransferirDosis }) {
           <input
             type="range"
             min="3"
-            max="40"
+            max="45"
             step="0.5"
             value={pKg}
             onChange={e => setPesoKg(e.target.value)}
@@ -2986,26 +2998,49 @@ function VistaCalculadoraDosis({ perfilActivo, onTransferirDosis }) {
           </select>
         </div>
 
+        {/* Alerta Destacada de Dosis Techo Aplicada */}
+        {calculo.dosisTechoAplicada && (
+          <div style={{
+            background: '#FEF3C7',
+            border: '1.5px solid #F59E0B',
+            borderRadius: 10,
+            padding: '10px 12px',
+            marginBottom: 14,
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 8,
+            color: '#92400E'
+          }}>
+            <span style={{ fontSize: 16 }}>🛡️</span>
+            <div style={{ fontSize: 12, lineHeight: 1.45 }}>
+              <strong>Dosis Techo Aplicada por Seguridad Pediátrica:</strong> Para {pKg} kg, el cálculo teórico multiplicativo ({calculo.dosisCalculadaSinTopeMg} mg) superó el límite pediátrico de seguridad por toma ({calculo.maxDosisUnicaMg} mg). Se ajustó automáticamente al techo seguro para prevenir sobredosis hepática o renal.
+            </div>
+          </div>
+        )}
+
         {/* Resultado Destacado */}
         <div style={{
           background: '#FFF4EE',
-          border: `2px solid ${COLORS.sageLight}`,
+          border: `2px solid ${calculo.dosisTechoAplicada ? '#F59E0B' : COLORS.sageLight}`,
           borderRadius: 14,
           padding: 16,
           marginBottom: 16,
           textAlign: 'center'
         }}>
           <div style={{ fontSize: 12, color: COLORS.sageDark, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8 }}>
-            Dosis Recomendada por Toma
+            Dosis Recomendada por Toma {calculo.dosisTechoAplicada ? '(Tope Seguro)' : ''}
           </div>
-          <div style={{ fontSize: 28, fontWeight: 800, color: COLORS.sageDark, margin: '6px 0' }}>
+          <div style={{ fontSize: 30, fontWeight: 800, color: COLORS.sageDark, margin: '6px 0' }}>
             {presActual.esGotas ? `${calculo.dosisGotas} gotas` : `${calculo.dosisMl} ml`}
           </div>
           <div style={{ fontSize: 13, color: COLORS.ink, fontWeight: 600 }}>
-            Equivalente a ≈ {calculo.dosisSugeridaMg} mg ({calculo.rangoMg})
+            Equivalente a ≈ {calculo.dosisMg} mg ({calculo.rangoMg})
           </div>
           <div style={{ fontSize: 12, color: COLORS.inkLight, marginTop: 4 }}>
-            🕒 {calculo.intervalo}
+            🕒 {calculo.intervaloTexto}
+          </div>
+          <div style={{ fontSize: 11.5, color: COLORS.inkLight, marginTop: 6, borderTop: '1px dashed #CBD5E1', paddingTop: 6 }}>
+            📊 Límite acumulado seguro: Máximo {calculo.maxDosisDiariaMg} mg en 24 horas ({farmaco === 'paracetamol' ? '60 mg/kg/día' : '30-40 mg/kg/día'})
           </div>
         </div>
 
@@ -3022,19 +3057,46 @@ function VistaCalculadoraDosis({ perfilActivo, onTransferirDosis }) {
           {calculo.aviso}
         </div>
 
+        {/* Checkbox de Confirmación y Consentimiento Clínico Responsable */}
+        <div style={{
+          background: '#F8FAFC',
+          border: '1px solid #CBD5E1',
+          borderRadius: 10,
+          padding: '11px 13px',
+          marginBottom: 16
+        }}>
+          <label htmlFor="chk-verificacion-clinica" style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', margin: 0 }}>
+            <input
+              type="checkbox"
+              id="chk-verificacion-clinica"
+              checked={confirmacionLeida}
+              onChange={e => setConfirmacionLeida(e.target.checked)}
+              style={{ marginTop: 2, accentColor: COLORS.sage, width: 17, height: 17, cursor: 'pointer' }}
+            />
+            <span style={{ fontSize: 12, color: COLORS.ink, lineHeight: 1.45 }}>
+              <strong>Cotejo y Responsabilidad Médica:</strong> Confirmo que el peso ({pKg} kg) es actual y he cotejado en el envase físico que la concentración es exactamente <em>{presActual.nombre}</em>. Entiendo que este cálculo es un asistente orientativo y no reemplaza la indicación del pediatra ni el prospecto oficial.
+            </span>
+          </label>
+        </div>
+
         <button
           style={{
             ...S.btn,
             width: '100%',
             padding: '12px 16px',
-            background: bloqueadoPorAlergia ? '#9E2A2B' : COLORS.sage,
-            opacity: bloqueadoPorAlergia ? 0.7 : 1,
-            cursor: bloqueadoPorAlergia ? 'not-allowed' : 'pointer'
+            background: bloqueadoPorAlergia ? '#9E2A2B' : (!confirmacionLeida ? '#94A3B8' : COLORS.sage),
+            opacity: bloqueadoPorAlergia ? 0.7 : (!confirmacionLeida ? 0.85 : 1),
+            cursor: (bloqueadoPorAlergia || !confirmacionLeida) ? 'not-allowed' : 'pointer',
+            color: '#FFFFFF'
           }}
           onClick={aplicarARegistro}
-          disabled={bloqueadoPorAlergia}
+          disabled={bloqueadoPorAlergia || !confirmacionLeida}
         >
-          {bloqueadoPorAlergia ? '❌ Fármaco Contraindicado por Alergia' : `📋 Registrar esta dosis en la bitácora de ${perfilActivo?.nombre || 'paciente'}`}
+          {bloqueadoPorAlergia
+            ? '❌ Fármaco Contraindicado por Alergia Cruzada'
+            : (!confirmacionLeida
+              ? '⚠️ Confirme la verificación del envase arriba para registrar'
+              : `📋 Registrar esta dosis en la bitácora de ${perfilActivo?.nombre || 'paciente'}`)}
         </button>
       </div>
     </div>
@@ -3616,10 +3678,12 @@ function VistaAsistenteIA({ perfilActivo, registrosDelPerfil, patrones }) {
     setInputTexto('');
     setCargando(true);
 
+    // Arquitectura Híbrida & B2B Due Diligence: Soporte de Gateway/Proxy Sanitizado y Gemini Directo
+    const proxyUrl = import.meta.env.VITE_AI_PROXY_URL || '';
     const apiKey = customKey.trim() || import.meta.env.VITE_GEMINI_API_KEY || '';
 
-    // Intento con Gemini API (timeout estricto 8.000 ms per standard)
-    if (apiKey) {
+    // Intento con IA en vivo (timeout estricto 8.000 ms per standard clínico)
+    if (proxyUrl || apiKey) {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 8000);
 
@@ -3634,24 +3698,41 @@ Instrucciones:
 2. Si hay signos de riesgo vital (dificultad respiratoria, somnolencia extrema, fiebre >40°C, manchas rojas fijas), indícalo en el primer párrafo en MAYÚSCULAS y aconseja urgencias.
 3. Este asistente orienta pero no reemplaza la atención médica.`;
 
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+        const targetUrl = proxyUrl
+          ? `${proxyUrl}/api/pediatric-triage`
+          : `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+        const requestBody = proxyUrl
+          ? JSON.stringify({
+              consulta,
+              contextoClinico: {
+                paciente: perfilActivo?.nombre,
+                pesoKg: perfilActivo?.pesoKg,
+                ultimaTemp,
+                sintomas: ultimosSintomas,
+                patrones: patrones.map(p => p.texto)
+              }
+            })
+          : JSON.stringify({
               contents: [
                 { parts: [{ text: promptSistema }, { text: `Consulta de los padres: ${consulta}` }] }
               ]
-            }),
-            signal: controller.signal,
-          }
-        );
+            });
+
+        const response = await fetch(targetUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: requestBody,
+          signal: controller.signal,
+        });
         clearTimeout(timeoutId);
 
         if (response.ok) {
           const resData = await response.json();
-          const respuestaTexto = resData?.candidates?.[0]?.content?.parts?.[0]?.text;
+          const respuestaTexto = proxyUrl
+            ? (resData?.respuesta || resData?.texto)
+            : resData?.candidates?.[0]?.content?.parts?.[0]?.text;
+
           if (respuestaTexto) {
             setMensajes(prev => [
               ...prev,
@@ -3659,7 +3740,7 @@ Instrucciones:
                 id: uid(),
                 emisor: 'asistente',
                 texto: respuestaTexto,
-                fuente: '⚡ Gemini IA',
+                fuente: proxyUrl ? '🛡️ Gateway B2B IA' : '⚡ Gemini IA',
                 hora: new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }),
                 esAlerta: respuestaTexto.includes('URGENCIAS') || respuestaTexto.includes('🚨'),
               }
@@ -3669,7 +3750,7 @@ Instrucciones:
           }
         }
       } catch {
-        // Fallback inmediato a simulación guiada
+        // Fallback inmediato a triaje pediátrico offline autónomo
       }
     }
 
