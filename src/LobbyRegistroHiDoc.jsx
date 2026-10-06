@@ -536,7 +536,7 @@ export default function LobbyRegistroHiDoc({ onLoginExitoso }) {
               padding: '7px 14px',
               fontSize: 12,
               fontWeight: 700,
-              color: '#2A9D8F',
+              color: '#13534B',
               cursor: 'pointer',
               display: 'inline-flex',
               alignItems: 'center',
@@ -549,7 +549,7 @@ export default function LobbyRegistroHiDoc({ onLoginExitoso }) {
 
         {/* Nota de Privacidad */}
         <div style={{ textAlign: 'center', marginTop: 16 }}>
-          <span style={{ fontSize: 11, color: '#A0978E', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ fontSize: 11, color: '#59524D', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
             🛡️ Privacidad médica garantizada • Datos encriptados localmente
           </span>
         </div>

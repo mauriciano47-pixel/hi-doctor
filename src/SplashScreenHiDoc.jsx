@@ -4,9 +4,9 @@ export default function SplashScreenHiDoc({ onSaltar }) {
   const [progreso, setProgreso] = useState(0);
 
   useEffect(() => {
-    // Contador ágil de bienvenida (650ms para óptimo LCP)
+    // Contador ágil de bienvenida (350ms para óptimo LCP)
     const inicio = Date.now();
-    const duracion = 650;
+    const duracion = 350;
     const intervalo = setInterval(() => {
       const transcurrido = Date.now() - inicio;
       const pct = Math.min(100, Math.round((transcurrido / duracion) * 100));
@@ -14,7 +14,7 @@ export default function SplashScreenHiDoc({ onSaltar }) {
       if (transcurrido >= duracion) {
         clearInterval(intervalo);
       }
-    }, 20);
+    }, 15);
 
     return () => clearInterval(intervalo);
   }, []);
