@@ -18,7 +18,7 @@ const COLORS = {
   terracotta: '#F2A65A',
   terracottaDark: '#D88C3D',
   ink: '#2D2926',
-  inkLight: '#8A7F77',
+  inkLight: '#59524D',
   border: '#F0E4DA',
   white: '#FFFFFF',
   alert: '#D95550',
@@ -608,15 +608,7 @@ function detectarPatrones(registros) {
 }
 
 function useFonts() {
-  useEffect(() => {
-    if (!document.getElementById('st-fonts')) {
-      const link = document.createElement('link');
-      link.id = 'st-fonts';
-      link.rel = 'stylesheet';
-      link.href = 'https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Nunito:wght@400;500;600;700&display=swap';
-      document.head.appendChild(link);
-    }
-  }, []);
+  // Precarga declarativa optimizada con preconnect en index.html
 }
 
 function GraficaTemperatura({ registros }) {
@@ -740,7 +732,7 @@ export default function App() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setMostrarSplash(false);
-    }, 3000);
+    }, 650);
     return () => clearTimeout(timer);
   }, []);
 
@@ -1047,7 +1039,7 @@ export default function App() {
   }
 
   return (
-    <div style={S.app}>
+    <main style={S.app} id="main-content">
       {/* Barra de estado / Credencial EMR Header */}
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
         <div>
@@ -1495,7 +1487,7 @@ export default function App() {
           <span>Ayuda</span>
         </button>
       </nav>
-    </div>
+    </main>
   );
 }
 
@@ -1712,6 +1704,7 @@ function FormularioExpedienteHospitalario({ perfilInicial, esOnboarding, onGuard
               <label htmlFor="exp-sexo" style={S.label}>Sexo biológico</label>
               <select
                 id="exp-sexo"
+                aria-label="Sexo biológico del paciente"
                 style={S.input}
                 value={sexo}
                 onChange={e => setSexo(e.target.value)}
@@ -1809,6 +1802,7 @@ function FormularioExpedienteHospitalario({ perfilInicial, esOnboarding, onGuard
             <label htmlFor="exp-sangre" style={S.label}>Grupo Sanguíneo y Factor Rh</label>
             <select
               id="exp-sangre"
+              aria-label="Grupo sanguíneo y factor Rh"
               style={S.input}
               value={grupoSanguineo}
               onChange={e => setGrupoSanguineo(e.target.value)}
@@ -1951,6 +1945,7 @@ function FormularioExpedienteHospitalario({ perfilInicial, esOnboarding, onGuard
               <label htmlFor="exp-parentesco" style={S.label}>Parentesco</label>
               <select
                 id="exp-parentesco"
+                aria-label="Parentesco del tutor"
                 style={S.input}
                 value={parentesco}
                 onChange={e => setParentesco(e.target.value)}
@@ -1979,6 +1974,7 @@ function FormularioExpedienteHospitalario({ perfilInicial, esOnboarding, onGuard
               <label htmlFor="exp-pais" style={S.label}>País (fija 131/112/911)</label>
               <select
                 id="exp-pais"
+                aria-label="País de residencia para números de emergencia"
                 style={S.input}
                 value={pais}
                 onChange={e => setPais(e.target.value)}
@@ -2643,6 +2639,7 @@ function NuevoRegistroForm({ onGuardar, onCancelar, prefillMedicamento, nombrePa
                 <label htmlFor="med-unidad" style={S.label}>Unidad</label>
                 <select
                   id="med-unidad"
+                  aria-label="Unidad de medida del medicamento"
                   style={S.input}
                   value={medUnidad}
                   onChange={e => setMedUnidad(e.target.value)}
@@ -2988,6 +2985,7 @@ function VistaCalculadoraDosis({ perfilActivo, onTransferirDosis }) {
           <label htmlFor="calc-pres" style={S.label}>Presentación comercial del envase:</label>
           <select
             id="calc-pres"
+            aria-label="Presentación comercial del envase"
             style={S.input}
             value={presentacion}
             onChange={e => setPresentacion(e.target.value)}
@@ -3427,6 +3425,7 @@ function VistaAyuda({ contactos, agregarContacto, eliminarContacto, paisSeleccio
         <label htmlFor="sel-pais" style={S.label}>Selecciona tu país:</label>
         <select
           id="sel-pais"
+          aria-label="País para directorio de emergencias"
           style={S.input}
           value={paisSeleccionado}
           onChange={e => setPaisSeleccionado(e.target.value)}
@@ -3571,7 +3570,7 @@ function ContactoForm({ onGuardar, onCancelar }) {
       <h3 style={{ ...S.h2, fontSize: 15 }}>Nuevo Contacto Médico</h3>
       <div style={{ marginBottom: 8 }}>
         <label htmlFor="c-tipo" style={S.label}>Tipo de contacto</label>
-        <select id="c-tipo" style={S.input} value={tipo} onChange={e => setTipo(e.target.value)}>
+        <select id="c-tipo" aria-label="Tipo de contacto médico" style={S.input} value={tipo} onChange={e => setTipo(e.target.value)}>
           {Object.entries(TIPOS_CONTACTO).map(([k, v]) => (
             <option key={k} value={k}>{v}</option>
           ))}
@@ -4026,7 +4025,7 @@ function ModalMarcaBlanca({ marcaBlanca, onGuardar, onClose }) {
               border: 'none',
               fontSize: 20,
               cursor: 'pointer',
-              color: '#8A7F77',
+              color: '#59524D',
               padding: 4
             }}
             aria-label="Cerrar modal de personalización"
@@ -4035,7 +4034,7 @@ function ModalMarcaBlanca({ marcaBlanca, onGuardar, onClose }) {
           </button>
         </div>
 
-        <p style={{ fontSize: 13, color: '#8A7F77', lineHeight: 1.5, marginBottom: 16 }}>
+        <p style={{ fontSize: 13, color: '#59524D', lineHeight: 1.5, marginBottom: 16 }}>
           Adapta HiDoc con la identidad visual y canales directos de tu clínica, hospital o consulta pediátrica privada para ofrecerlo a tus pacientes o inversores.
         </p>
 
@@ -4082,7 +4081,7 @@ function ModalMarcaBlanca({ marcaBlanca, onGuardar, onClose }) {
               onClick={restablecerDefault}
               style={{
                 background: 'transparent',
-                color: '#8A7F77',
+                color: '#59524D',
                 border: '1px solid #CCC',
                 borderRadius: 6,
                 padding: '6px 10px',
@@ -4253,7 +4252,7 @@ function ModalPlanesPremium({ esPremiumActivo, onTogglePremium, onAbrirMarcaBlan
               border: 'none',
               fontSize: 20,
               cursor: 'pointer',
-              color: '#8A7F77',
+              color: '#59524D',
               padding: 4
             }}
             aria-label="Cerrar modal de planes"
@@ -4262,7 +4261,7 @@ function ModalPlanesPremium({ esPremiumActivo, onTogglePremium, onAbrirMarcaBlan
           </button>
         </div>
 
-        <p style={{ fontSize: 13, color: '#8A7F77', lineHeight: 1.5, margin: '0 0 16px' }}>
+        <p style={{ fontSize: 13, color: '#59524D', lineHeight: 1.5, margin: '0 0 16px' }}>
           Modelo SaaS con margen bruto superior al 95%: suscripción familiar recurrente para padres y licenciamiento B2B llave en mano para clínicas pediátricas.
         </p>
 
@@ -4284,7 +4283,7 @@ function ModalPlanesPremium({ esPremiumActivo, onTogglePremium, onAbrirMarcaBlan
               borderRadius: 8,
               border: 'none',
               background: periodo === 'mensual' ? '#FFF' : 'transparent',
-              color: periodo === 'mensual' ? '#2D2926' : '#8A7F77',
+              color: periodo === 'mensual' ? '#2D2926' : '#59524D',
               fontWeight: 700,
               fontSize: 12.5,
               cursor: 'pointer'
@@ -4301,7 +4300,7 @@ function ModalPlanesPremium({ esPremiumActivo, onTogglePremium, onAbrirMarcaBlan
               borderRadius: 8,
               border: 'none',
               background: periodo === 'anual' ? '#FFF' : 'transparent',
-              color: periodo === 'anual' ? '#2D2926' : '#8A7F77',
+              color: periodo === 'anual' ? '#2D2926' : '#59524D',
               fontWeight: 700,
               fontSize: 12.5,
               cursor: 'pointer',
@@ -4328,10 +4327,10 @@ function ModalPlanesPremium({ esPremiumActivo, onTogglePremium, onAbrirMarcaBlan
             justifyContent: 'space-between'
           }}>
             <div>
-              <span style={{ fontSize: 11, fontWeight: 700, color: '#8A7F77', textTransform: 'uppercase' }}>Comunitario</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#59524D', textTransform: 'uppercase' }}>Comunitario</span>
               <h3 style={{ fontSize: 16, margin: '4px 0', color: '#2D2926' }}>Plan Gratuito</h3>
               <div style={{ fontSize: 20, fontWeight: 800, color: '#2D2926', marginBottom: 10 }}>
-                $0 <span style={{ fontSize: 11, fontWeight: 500, color: '#8A7F77' }}>/ siempre</span>
+                $0 <span style={{ fontSize: 11, fontWeight: 500, color: '#59524D' }}>/ siempre</span>
               </div>
               <ul style={{ margin: 0, paddingLeft: 16, fontSize: 11.5, color: '#555', lineHeight: 1.6 }}>
                 <li>1 perfil pediátrico</li>
@@ -4364,7 +4363,7 @@ function ModalPlanesPremium({ esPremiumActivo, onTogglePremium, onAbrirMarcaBlan
               </div>
               <h3 style={{ fontSize: 16, margin: '4px 0', color: '#2D2926' }}>Familiar Pro</h3>
               <div style={{ fontSize: 22, fontWeight: 800, color: '#E07A5F', marginBottom: 10 }}>
-                {periodo === 'mensual' ? '$4.99' : '$3.33'} <span style={{ fontSize: 11, fontWeight: 500, color: '#8A7F77' }}>USD/mes</span>
+                {periodo === 'mensual' ? '$4.99' : '$3.33'} <span style={{ fontSize: 11, fontWeight: 500, color: '#59524D' }}>USD/mes</span>
               </div>
               <ul style={{ margin: 0, paddingLeft: 16, fontSize: 11.5, color: '#333', lineHeight: 1.6 }}>
                 <li><strong>Perfiles ilimitados</strong> (hermanos)</li>
@@ -4445,7 +4444,7 @@ function ModalPlanesPremium({ esPremiumActivo, onTogglePremium, onAbrirMarcaBlan
               borderRadius: 8,
               padding: '8px 20px',
               fontSize: 12.5,
-              color: '#8A7F77',
+              color: '#59524D',
               cursor: 'pointer',
               fontWeight: 600
             }}

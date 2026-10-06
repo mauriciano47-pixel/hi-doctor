@@ -4,9 +4,9 @@ export default function SplashScreenHiDoc({ onSaltar }) {
   const [progreso, setProgreso] = useState(0);
 
   useEffect(() => {
-    // Contador suave de 3 segundos (3000ms)
+    // Contador ágil de bienvenida (650ms para óptimo LCP)
     const inicio = Date.now();
-    const duracion = 3000;
+    const duracion = 650;
     const intervalo = setInterval(() => {
       const transcurrido = Date.now() - inicio;
       const pct = Math.min(100, Math.round((transcurrido / duracion) * 100));
@@ -14,7 +14,7 @@ export default function SplashScreenHiDoc({ onSaltar }) {
       if (transcurrido >= duracion) {
         clearInterval(intervalo);
       }
-    }, 30);
+    }, 20);
 
     return () => clearInterval(intervalo);
   }, []);
@@ -38,6 +38,7 @@ export default function SplashScreenHiDoc({ onSaltar }) {
         userSelect: 'none'
       }}
       aria-label="Pantalla de inicio HiDoc"
+      onClick={onSaltar}
     >
       {/* Botón discreto para omitir si el usuario tiene prisa */}
       <button
@@ -47,17 +48,18 @@ export default function SplashScreenHiDoc({ onSaltar }) {
           position: 'absolute',
           top: 24,
           right: 24,
-          background: 'rgba(255, 255, 255, 0.75)',
+          background: 'rgba(255, 255, 255, 0.9)',
           border: '1px solid rgba(240, 228, 218, 0.9)',
           borderRadius: 20,
           padding: '6px 14px',
           fontSize: 12,
           fontWeight: 700,
-          color: '#8A7F77',
+          color: '#59524D',
           cursor: 'pointer',
           backdropFilter: 'blur(4px)',
           transition: 'all 0.2s ease'
         }}
+        aria-label="Saltar bienvenida"
         title="Omitir pantalla de bienvenida"
       >
         Saltar »
@@ -135,7 +137,7 @@ export default function SplashScreenHiDoc({ onSaltar }) {
         <p
           style={{
             fontSize: 13.5,
-            color: '#8A7F77',
+            color: '#59524D',
             margin: '0 0 28px',
             lineHeight: 1.5,
             fontWeight: 500
@@ -144,7 +146,7 @@ export default function SplashScreenHiDoc({ onSaltar }) {
           Acompañamiento clínico familiar, curva térmica y dosis precisas minuto a minuto.
         </p>
 
-        {/* Barra de progreso de 3 segundos */}
+        {/* Barra de progreso de 650ms */}
         <div style={{ width: '100%', maxWidth: 260, marginBottom: 10 }}>
           <div
             style={{
@@ -172,7 +174,7 @@ export default function SplashScreenHiDoc({ onSaltar }) {
               alignItems: 'center',
               marginTop: 8,
               fontSize: 11,
-              color: '#8A7F77',
+              color: '#59524D',
               fontWeight: 600
             }}
           >
@@ -184,7 +186,7 @@ export default function SplashScreenHiDoc({ onSaltar }) {
         <div
           style={{
             fontSize: 11,
-            color: '#A0978E',
+            color: '#59524D',
             display: 'flex',
             alignItems: 'center',
             gap: 6,

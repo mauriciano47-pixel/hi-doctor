@@ -2,16 +2,16 @@ import { useState } from 'react';
 
 const COLORS = {
   cream: '#FFF7F0',
-  sage: '#E07A5F',
-  sageDark: '#C4624A',
-  terracotta: '#F2A65A',
+  sage: '#BA4B31',
+  sageDark: '#9C3E28',
+  terracotta: '#D88C3D',
   ink: '#2D2926',
-  inkLight: '#8A7F77',
+  inkLight: '#59524D',
   border: '#F0E4DA',
   white: '#FFFFFF',
-  emerald: '#2A9D8F',
+  emerald: '#1E7268',
   emeraldLight: '#E8F5F3',
-  alert: '#D95550'
+  alert: '#B91C1C'
 };
 
 export default function LobbyRegistroHiDoc({ onLoginExitoso }) {
@@ -122,7 +122,8 @@ export default function LobbyRegistroHiDoc({ onLoginExitoso }) {
   }
 
   return (
-    <div
+    <main
+      id="main-content"
       style={{
         minHeight: '100vh',
         background: COLORS.cream,
@@ -209,7 +210,7 @@ export default function LobbyRegistroHiDoc({ onLoginExitoso }) {
             transition: 'all 0.15s ease',
             marginBottom: 18
           }}
-          aria-label="Registrarse o iniciar sesión con Google"
+          aria-label="Continuar con Google"
         >
           <svg viewBox="0 0 24 24" width="20" height="20">
             <path
@@ -393,10 +394,12 @@ export default function LobbyRegistroHiDoc({ onLoginExitoso }) {
               </div>
 
               <div>
-                <label style={{ fontSize: 12, fontWeight: 700, color: COLORS.ink, display: 'block', marginBottom: 5 }}>
+                <label htmlFor="lobby-parentesco" style={{ fontSize: 12, fontWeight: 700, color: COLORS.ink, display: 'block', marginBottom: 5 }}>
                   Parentesco:
                 </label>
                 <select
+                  id="lobby-parentesco"
+                  aria-label="Parentesco del tutor"
                   value={parentesco}
                   onChange={(e) => setParentesco(e.target.value)}
                   style={{
@@ -775,6 +778,6 @@ export default function LobbyRegistroHiDoc({ onLoginExitoso }) {
           </div>
         </div>
       )}
-    </div>
+    </main>
   );
 }
