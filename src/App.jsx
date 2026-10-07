@@ -9,6 +9,7 @@ import {
   PRESENTACIONES_DOSIS,
   calcularDosisMilimetrica
 } from './utils/clinicalPharmacology';
+import { redirigirCheckoutStripe, setSubscriptionStatus, STRIPE_PLANS } from './utils/stripeService';
 
 const COLORS = {
   cream: '#FFF7F0',
@@ -4212,6 +4213,18 @@ function ModalMarcaBlanca({ marcaBlanca, onGuardar, onClose }) {
 function ModalPlanesPremium({ esPremiumActivo, onTogglePremium, onAbrirMarcaBlanca, onClose }) {
   const [periodo, setPeriodo] = useState('anual'); // mensual | anual
 
+  const handleCheckoutStripe = () => {
+    try {
+      const planId = periodo === 'anual' ? STRIPE_PLANS.PRO_ANUAL.id : STRIPE_PLANS.PRO_MENSUAL.id;
+      const checkout = redirigirCheckoutStripe(planId);
+      window.open(checkout.url, '_blank', 'noopener,noreferrer');
+      setSubscriptionStatus(true, planId, 'stripe');
+      onTogglePremium();
+    } catch (err) {
+      alert(`Error al iniciar checkout: ${err.message}`);
+    }
+  };
+
   return (
     <div style={{
       position: 'fixed',
@@ -4375,21 +4388,27 @@ function ModalPlanesPremium({ esPremiumActivo, onTogglePremium, onAbrirMarcaBlan
             </div>
             <button
               type="button"
-              onClick={onTogglePremium}
+              onClick={handleCheckoutStripe}
               style={{
                 marginTop: 12,
-                background: esPremiumActivo ? '#2A9D8F' : '#E07A5F',
+                background: esPremiumActivo ? '#2A9D8F' : 'linear-gradient(135deg, #2A9D8F, #1E7268)',
                 color: '#FFF',
                 border: 'none',
                 borderRadius: 8,
-                padding: '8px 12px',
+                padding: '9px 12px',
                 fontSize: 12,
-                fontWeight: 700,
+                fontWeight: 800,
                 cursor: 'pointer',
-                width: '100%'
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+                boxShadow: '0 2px 8px rgba(42, 157, 143, 0.3)'
               }}
             >
-              {esPremiumActivo ? '✓ Premium Activado (Demo)' : '🚀 Probar 7 Días Gratis'}
+              <span>💳</span>
+              <span>{esPremiumActivo ? '✓ Suscripción Pro Activa (Stripe)' : `Activar con Stripe (${periodo === 'mensual' ? '$4.99/mes' : '$39.99/año'})`}</span>
             </button>
           </div>
         </div>
