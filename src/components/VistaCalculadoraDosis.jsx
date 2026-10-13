@@ -133,6 +133,8 @@ export default function VistaCalculadoraDosis({ perfilActivo, onTransferirDosis 
             onChange={e => setPesoKg(e.target.value)}
           />
           <input
+            id="calc-peso-slider"
+            name="pesoSlider"
             type="range"
             min="3"
             max="45"

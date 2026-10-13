@@ -144,8 +144,11 @@ export default function ModalMarcaBlanca({ marcaBlanca, onGuardar, onClose }) {
 
         <form onSubmit={handleGuardar}>
           <div style={{ marginBottom: 14 }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 700, color: '#2D2926', cursor: 'pointer' }}>
+            <label htmlFor="mb-activo" style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 700, color: '#2D2926', cursor: 'pointer' }}>
               <input
+                id="mb-activo"
+                name="marcaBlancaActiva"
+                aria-label="Activar Modo Clínica Institucional"
                 type="checkbox"
                 checked={activo}
                 onChange={e => setActivo(e.target.checked)}

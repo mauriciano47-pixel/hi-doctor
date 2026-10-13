@@ -357,6 +357,9 @@ export default function FormularioExpedienteHospitalario({ perfilInicial, esOnbo
               })}
             </div>
             <input
+              id="exp-alergias-texto"
+              name="alergiasTexto"
+              aria-label="Otra alergia no listada"
               style={{ ...S.input, fontSize: 12, padding: '8px 10px' }}
               value={alergiasTexto}
               onChange={e => setAlergiasTexto(e.target.value)}
@@ -365,7 +368,7 @@ export default function FormularioExpedienteHospitalario({ perfilInicial, esOnbo
           </div>
 
           <div style={{ marginBottom: 12 }}>
-            <label style={S.label}>Antecedentes Médicos Relevantes:</label>
+            <label htmlFor="exp-antecedentes-texto" style={S.label}>Antecedentes Médicos Relevantes:</label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
               {ANTECEDENTES_COMUNES.map(ant => {
                 const marcada = antecedentes.includes(ant);
@@ -392,6 +395,9 @@ export default function FormularioExpedienteHospitalario({ perfilInicial, esOnbo
               })}
             </div>
             <input
+              id="exp-antecedentes-texto"
+              name="antecedentesTexto"
+              aria-label="Otro antecedente médico relevante"
               style={{ ...S.input, fontSize: 12, padding: '8px 10px' }}
               value={antecedentesTexto}
               onChange={e => setAntecedentesTexto(e.target.value)}

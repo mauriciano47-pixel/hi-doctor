@@ -224,7 +224,10 @@ Instrucciones:
           <div style={{ display: 'flex', gap: 8 }}>
             <input
               id="gemini-key"
+              name="password"
               type="password"
+              autoComplete="current-password"
+              aria-label="Google Gemini API Key"
               style={S.input}
               placeholder="AIzaSy..."
               value={customKey}
@@ -348,6 +351,8 @@ Instrucciones:
       {/* Input de consulta */}
       <div style={{ display: 'flex', gap: 8 }}>
         <input
+          id="consulta-ia"
+          name="consulta"
           style={{ ...S.input, flex: 1 }}
           placeholder={`Escribe tu consulta sobre ${perfilActivo?.nombre || 'el paciente'}...`}
           value={inputTexto}

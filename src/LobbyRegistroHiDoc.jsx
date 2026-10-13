@@ -324,11 +324,15 @@ export default function LobbyRegistroHiDoc({ onLoginExitoso }) {
         {pestana === 'registro' && (
           <form onSubmit={manejarRegistroCorreo}>
             <div style={{ marginBottom: 12 }}>
-              <label style={{ fontSize: 12, fontWeight: 700, color: COLORS.ink, display: 'block', marginBottom: 5 }}>
+              <label htmlFor="reg-nombre" style={{ fontSize: 12, fontWeight: 700, color: COLORS.ink, display: 'block', marginBottom: 5 }}>
                 Nombre completo del tutor / responsable:
               </label>
               <input
+                id="reg-nombre"
+                name="nombre"
                 type="text"
+                autoComplete="name"
+                autoCapitalize="words"
                 placeholder="Ej: Mauricio Uribe Maldonado"
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
@@ -347,11 +351,17 @@ export default function LobbyRegistroHiDoc({ onLoginExitoso }) {
             </div>
 
             <div style={{ marginBottom: 12 }}>
-              <label style={{ fontSize: 12, fontWeight: 700, color: COLORS.ink, display: 'block', marginBottom: 5 }}>
+              <label htmlFor="reg-email" style={{ fontSize: 12, fontWeight: 700, color: COLORS.ink, display: 'block', marginBottom: 5 }}>
                 Correo electrónico alternativo:
               </label>
               <input
+                id="reg-email"
+                name="email"
                 type="email"
+                autoComplete="email"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck="false"
                 placeholder="nombre@correo.com"
                 value={correo}
                 onChange={(e) => setCorreo(e.target.value)}
@@ -371,11 +381,14 @@ export default function LobbyRegistroHiDoc({ onLoginExitoso }) {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 10, marginBottom: 16 }}>
               <div>
-                <label style={{ fontSize: 12, fontWeight: 700, color: COLORS.ink, display: 'block', marginBottom: 5 }}>
+                <label htmlFor="reg-password" style={{ fontSize: 12, fontWeight: 700, color: COLORS.ink, display: 'block', marginBottom: 5 }}>
                   PIN o Contraseña:
                 </label>
                 <input
+                  id="reg-password"
+                  name="password"
                   type="password"
+                  autoComplete="new-password"
                   placeholder="Mín. 4 dígitos"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -448,11 +461,17 @@ export default function LobbyRegistroHiDoc({ onLoginExitoso }) {
         {pestana === 'login' && (
           <form onSubmit={manejarLoginCorreo}>
             <div style={{ marginBottom: 12 }}>
-              <label style={{ fontSize: 12, fontWeight: 700, color: COLORS.ink, display: 'block', marginBottom: 5 }}>
+              <label htmlFor="login-email" style={{ fontSize: 12, fontWeight: 700, color: COLORS.ink, display: 'block', marginBottom: 5 }}>
                 Correo electrónico registrado:
               </label>
               <input
+                id="login-email"
+                name="email"
                 type="email"
+                autoComplete="email"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck="false"
                 placeholder="nombre@correo.com"
                 value={loginCorreo}
                 onChange={(e) => setLoginCorreo(e.target.value)}
@@ -471,11 +490,14 @@ export default function LobbyRegistroHiDoc({ onLoginExitoso }) {
             </div>
 
             <div style={{ marginBottom: 16 }}>
-              <label style={{ fontSize: 12, fontWeight: 700, color: COLORS.ink, display: 'block', marginBottom: 5 }}>
+              <label htmlFor="login-password" style={{ fontSize: 12, fontWeight: 700, color: COLORS.ink, display: 'block', marginBottom: 5 }}>
                 Contraseña o PIN:
               </label>
               <input
+                id="login-password"
+                name="password"
                 type="password"
+                autoComplete="current-password"
                 placeholder="Tu contraseña o PIN"
                 value={loginPassword}
                 onChange={(e) => setLoginPassword(e.target.value)}
@@ -579,6 +601,8 @@ export default function LobbyRegistroHiDoc({ onLoginExitoso }) {
             style={{
               width: '100%',
               maxWidth: 390,
+              maxHeight: '90vh',
+              overflowY: 'auto',
               background: COLORS.white,
               borderRadius: 20,
               padding: '24px 20px',
@@ -712,12 +736,18 @@ export default function LobbyRegistroHiDoc({ onLoginExitoso }) {
                   </button>
                 ) : (
                   <div style={{ marginBottom: 14, background: '#F9FAFB', padding: 12, borderRadius: 12 }}>
-                    <label style={{ fontSize: 11.5, fontWeight: 700, color: '#374151', display: 'block', marginBottom: 5 }}>
+                    <label htmlFor="google-custom-email" style={{ fontSize: 11.5, fontWeight: 700, color: '#374151', display: 'block', marginBottom: 5 }}>
                       Ingresa tu correo @gmail.com:
                     </label>
                     <div style={{ display: 'flex', gap: 6 }}>
                       <input
+                        id="google-custom-email"
+                        name="email"
                         type="email"
+                        autoComplete="email"
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        spellCheck="false"
                         placeholder="usuario@gmail.com"
                         value={correoGoogleCustom}
                         onChange={(e) => setCorreoGoogleCustom(e.target.value)}
