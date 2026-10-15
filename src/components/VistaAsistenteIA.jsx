@@ -108,9 +108,25 @@ Instrucciones:
 2. Si hay signos de riesgo vital (dificultad respiratoria, somnolencia extrema, fiebre >40°C, manchas rojas fijas), indícalo en el primer párrafo en MAYÚSCULAS y aconseja urgencias.
 3. Este asistente orienta pero no reemplaza la atención médica.`;
 
-        const targetUrl = proxyUrl
-          ? `${proxyUrl}/api/pediatric-triage`
-          : `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        const GEMINI_STATIC_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+
+        let targetUrl = GEMINI_STATIC_ENDPOINT;
+        const requestHeaders = { 'Content-Type': 'application/json' };
+
+        if (proxyUrl) {
+          try {
+            const parsed = new URL(proxyUrl);
+            if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+              targetUrl = `${parsed.origin}${parsed.pathname.replace(/\/$/, '')}/api/pediatric-triage`;
+            }
+          } catch {
+            targetUrl = GEMINI_STATIC_ENDPOINT;
+          }
+        }
+
+        if (targetUrl === GEMINI_STATIC_ENDPOINT && apiKey) {
+          requestHeaders['x-goog-api-key'] = apiKey.trim();
+        }
 
         const requestBody = proxyUrl
           ? JSON.stringify({
@@ -131,7 +147,7 @@ Instrucciones:
 
         const response = await fetch(targetUrl, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: requestHeaders,
           body: requestBody,
           signal: controller.signal,
         });
@@ -188,8 +204,9 @@ Instrucciones:
   }
 
   function guardarApiKey(key) {
-    setCustomKey(key);
-    try { window.localStorage.setItem('hidoctor_gemini_api_key', key); } catch (err) { void err; }
+    const cleanKey = String(key || '').trim().slice(0, 100);
+    setCustomKey(cleanKey);
+    try { window.localStorage.setItem('hidoctor_gemini_api_key', cleanKey); } catch (err) { void err; }
     setMostrarConfigKey(false);
   }
 

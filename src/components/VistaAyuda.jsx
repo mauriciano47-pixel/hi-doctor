@@ -87,8 +87,14 @@ export default function VistaAyuda({ contactos, agregarContacto, eliminarContact
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const { latitude, longitude } = pos.coords;
-        const query = `[out:json][timeout:10];(node["amenity"="hospital"](around:5000,${latitude},${longitude});node["amenity"="clinic"](around:5000,${latitude},${longitude});node["amenity"="pharmacy"](around:5000,${latitude},${longitude});node["amenity"="doctors"](around:5000,${latitude},${longitude}););out body;`;
+        const latitude = Number(pos.coords.latitude);
+        const longitude = Number(pos.coords.longitude);
+        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+          setErrorUbicacion('Coordenadas geodésicas no válidas.');
+          setBuscandoCercanas(false);
+          return;
+        }
+        const query = `[out:json][timeout:10];(node["amenity"="hospital"](around:5000,${latitude.toFixed(6)},${longitude.toFixed(6)});node["amenity"="clinic"](around:5000,${latitude.toFixed(6)},${longitude.toFixed(6)});node["amenity"="pharmacy"](around:5000,${latitude.toFixed(6)},${longitude.toFixed(6)});node["amenity"="doctors"](around:5000,${latitude.toFixed(6)},${longitude.toFixed(6)}););out body;`;
 
         fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`)
           .then(r => r.json())
