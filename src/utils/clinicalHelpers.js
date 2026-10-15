@@ -68,7 +68,14 @@ export function calcularIMC(pesoKg, tallaCm) {
 }
 
 export function generarCodigoExpediente() {
-  const num = Math.floor(1000 + Math.random() * 9000);
+  let num;
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    const arr = new Uint32Array(1);
+    crypto.getRandomValues(arr);
+    num = 1000 + (arr[0] % 9000);
+  } else {
+    num = Math.floor(1000 + Math.random() * 9000);
+  }
   const anio = new Date().getFullYear();
   return `HC-PED-${anio}-${num}`;
 }
@@ -83,7 +90,12 @@ export function calcularDistancia(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-export const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+export const uid = () => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return 'uid-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 9);
+};
 
 export const formatFecha = (iso) => {
   try {

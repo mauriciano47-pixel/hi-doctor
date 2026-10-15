@@ -14,6 +14,24 @@ export default function CredencialClinicaPediatrica({ perfilActivo, onEditar, on
 
   const tieneAlergias = perfilActivo.alergias && perfilActivo.alergias.length > 0 && !perfilActivo.alergias.includes('Sin alergias conocidas');
 
+  function copiarFallback(texto) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = texto;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2500);
+    } catch {
+      setCopiado(false);
+    }
+  }
+
   function copiarExpedienteTexto() {
     let t = `📋 EXPEDIENTE CLÍNICO PEDIÁTRICO\n`;
     t += `Código: ${perfilActivo.codigoExpediente || 'S/N'}\n`;
@@ -30,24 +48,16 @@ export default function CredencialClinicaPediatrica({ perfilActivo, onEditar, on
     t += `Fecha de Emisión: ${new Date().toLocaleDateString('es-CL')} (HiDoc EMR Pro)`;
 
     if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(t).then(() => {
-        setCopiado(true);
-        setTimeout(() => setCopiado(false), 2500);
-      });
+      navigator.clipboard.writeText(t)
+        .then(() => {
+          setCopiado(true);
+          setTimeout(() => setCopiado(false), 2500);
+        })
+        .catch(() => {
+          copiarFallback(t);
+        });
     } else {
-      try {
-        const ta = document.createElement('textarea');
-        ta.value = t;
-        ta.style.position = 'fixed';
-        ta.style.opacity = '0';
-        document.body.appendChild(ta);
-        ta.focus();
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-        setCopiado(true);
-        setTimeout(() => setCopiado(false), 2500);
-      } catch (err) { void err; }
+      copiarFallback(t);
     }
   }
 
