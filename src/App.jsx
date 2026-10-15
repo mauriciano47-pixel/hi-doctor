@@ -280,7 +280,14 @@ export default function App() {
   function simularEvolucionClinica() {
     if (!perfilActivo) return;
     const ahora = new Date();
-    const tempNum = (36.7 + Math.random() * 0.8).toFixed(1);
+    const arr = new Uint32Array(1);
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+      crypto.getRandomValues(arr);
+    } else {
+      arr[0] = Date.now();
+    }
+    const delta = (arr[0] % 80) / 100;
+    const tempNum = (36.7 + delta).toFixed(1);
     const nuevoRegistro = {
       id: uid(),
       perfilId: perfilActivo.id,

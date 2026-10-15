@@ -68,14 +68,13 @@ export function calcularIMC(pesoKg, tallaCm) {
 }
 
 export function generarCodigoExpediente() {
-  let num;
+  const arr = new Uint32Array(1);
   if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
-    const arr = new Uint32Array(1);
     crypto.getRandomValues(arr);
-    num = 1000 + (arr[0] % 9000);
   } else {
-    num = Math.floor(1000 + Math.random() * 9000);
+    arr[0] = Date.now() ^ 0x5deece66;
   }
+  const num = 1000 + (arr[0] % 9000);
   const anio = new Date().getFullYear();
   return `HC-PED-${anio}-${num}`;
 }
@@ -94,7 +93,14 @@ export const uid = () => {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
   }
-  return 'uid-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 9);
+  const arr = new Uint32Array(2);
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    crypto.getRandomValues(arr);
+  } else {
+    arr[0] = Date.now();
+    arr[1] = (Date.now() * 1664525 + 1013904223) >>> 0;
+  }
+  return `uid-${Date.now().toString(36)}-${arr[0].toString(36)}${arr[1].toString(36)}`;
 };
 
 export const formatFecha = (iso) => {
