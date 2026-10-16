@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   STRIPE_PLANS,
   getSubscriptionStatus,
@@ -8,16 +8,18 @@ import {
 
 export default function ModalSuscripcionPro({ isOpen, onClose }) {
   const [periodo, setPeriodo] = useState('mensual'); // 'mensual' | 'anual'
-  const [subStatus, setSubStatus] = useState(getSubscriptionStatus());
+  const [subStatus, setSubStatus] = useState(() => getSubscriptionStatus());
   const [procesando, setProcesando] = useState(false);
   const [mensajeExito, setMensajeExito] = useState(null);
+  const [lastOpen, setLastOpen] = useState(isOpen);
 
-  useEffect(() => {
+  if (isOpen !== lastOpen) {
+    setLastOpen(isOpen);
     if (isOpen) {
       setSubStatus(getSubscriptionStatus());
       setMensajeExito(null);
     }
-  }, [isOpen]);
+  }
 
   if (!isOpen) return null;
 

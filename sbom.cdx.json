@@ -1,0 +1,106 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-10-16T19:49:57.319995+00:00",
+    "tools": [
+      {
+        "vendor": "V-GUARD Sentinel",
+        "name": "Institutional Due Diligence Suite",
+        "version": "2.2.0"
+      }
+    ],
+    "component": {
+      "type": "application",
+      "name": "hi-doctor",
+      "lockfileSha256": "7f1fa5c12b7165669259448ee4ff238d40bc4e36d02939eac3571d5c163231a7"
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "name": "react",
+      "version": "19.2.6",
+      "purl": "pkg:npm/react@19.2.6",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "react-dom",
+      "version": "19.2.6",
+      "purl": "pkg:npm/react-dom@19.2.6",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "@eslint/js",
+      "version": "10.0.1",
+      "purl": "pkg:npm/@eslint/js@10.0.1",
+      "scope": "optional"
+    },
+    {
+      "type": "library",
+      "name": "@types/react",
+      "version": "19.2.14",
+      "purl": "pkg:npm/@types/react@19.2.14",
+      "scope": "optional"
+    },
+    {
+      "type": "library",
+      "name": "@types/react-dom",
+      "version": "19.2.3",
+      "purl": "pkg:npm/@types/react-dom@19.2.3",
+      "scope": "optional"
+    },
+    {
+      "type": "library",
+      "name": "@vitejs/plugin-react",
+      "version": "6.0.1",
+      "purl": "pkg:npm/@vitejs/plugin-react@6.0.1",
+      "scope": "optional"
+    },
+    {
+      "type": "library",
+      "name": "eslint",
+      "version": "10.3.0",
+      "purl": "pkg:npm/eslint@10.3.0",
+      "scope": "optional"
+    },
+    {
+      "type": "library",
+      "name": "eslint-plugin-react-hooks",
+      "version": "7.1.1",
+      "purl": "pkg:npm/eslint-plugin-react-hooks@7.1.1",
+      "scope": "optional"
+    },
+    {
+      "type": "library",
+      "name": "eslint-plugin-react-refresh",
+      "version": "0.5.2",
+      "purl": "pkg:npm/eslint-plugin-react-refresh@0.5.2",
+      "scope": "optional"
+    },
+    {
+      "type": "library",
+      "name": "gh-pages",
+      "version": "6.1.1",
+      "purl": "pkg:npm/gh-pages@6.1.1",
+      "scope": "optional"
+    },
+    {
+      "type": "library",
+      "name": "globals",
+      "version": "17.6.0",
+      "purl": "pkg:npm/globals@17.6.0",
+      "scope": "optional"
+    },
+    {
+      "type": "library",
+      "name": "vite",
+      "version": "8.0.12",
+      "purl": "pkg:npm/vite@8.0.12",
+      "scope": "optional"
+    }
+  ]
+}
