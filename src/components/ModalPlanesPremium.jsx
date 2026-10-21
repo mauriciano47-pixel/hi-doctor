@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { STRIPE_PLANS, redirigirCheckoutStripe, setSubscriptionStatus } from '../utils/stripeService';
 
 /**
@@ -8,6 +8,14 @@ import { STRIPE_PLANS, redirigirCheckoutStripe, setSubscriptionStatus } from '..
  */
 export default function ModalPlanesPremium({ esPremiumActivo, onTogglePremium, onAbrirMarcaBlanca, onClose }) {
   const [periodo, setPeriodo] = useState('anual'); // mensual | anual
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
   const handleCheckoutStripe = () => {
     try {
@@ -22,20 +30,23 @@ export default function ModalPlanesPremium({ esPremiumActivo, onTogglePremium, o
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: 'rgba(0,0,0,0.65)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 16,
-      zIndex: 9999,
-      backdropFilter: 'blur(4px)'
-    }}>
+    <div
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(0,0,0,0.65)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 16,
+        zIndex: 9999,
+        backdropFilter: 'blur(4px)'
+      }}
+    >
       <div style={{
         background: '#FFF7F0',
         borderRadius: 18,

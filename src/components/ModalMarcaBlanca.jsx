@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 /**
  * ============================================================================
@@ -10,6 +10,14 @@ export default function ModalMarcaBlanca({ marcaBlanca, onGuardar, onClose }) {
   const [nombreClinica, setNombreClinica] = useState(marcaBlanca?.nombreClinica || '');
   const [telefonoUrgencia, setTelefonoUrgencia] = useState(marcaBlanca?.telefonoUrgencia || '');
   const [linkReserva, setLinkReserva] = useState(marcaBlanca?.linkReserva || '');
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
   function handleGuardar(e) {
     e.preventDefault();
@@ -37,20 +45,23 @@ export default function ModalMarcaBlanca({ marcaBlanca, onGuardar, onClose }) {
   }
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: 'rgba(0,0,0,0.6)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 16,
-      zIndex: 9999,
-      backdropFilter: 'blur(3px)'
-    }}>
+    <div
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(0,0,0,0.6)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 16,
+        zIndex: 9999,
+        backdropFilter: 'blur(3px)'
+      }}
+    >
       <div style={{
         background: '#FFF7F0',
         borderRadius: 16,

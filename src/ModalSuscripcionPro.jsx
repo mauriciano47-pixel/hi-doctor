@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   STRIPE_PLANS,
   getSubscriptionStatus,
@@ -12,6 +12,15 @@ export default function ModalSuscripcionPro({ isOpen, onClose }) {
   const [procesando, setProcesando] = useState(false);
   const [mensajeExito, setMensajeExito] = useState(null);
   const [lastOpen, setLastOpen] = useState(isOpen);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (isOpen !== lastOpen) {
     setLastOpen(isOpen);
@@ -51,17 +60,23 @@ export default function ModalSuscripcionPro({ isOpen, onClose }) {
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      backgroundColor: 'rgba(45, 41, 38, 0.75)',
-      backdropFilter: 'blur(4px)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 9999,
-      padding: 16
-    }} role="dialog" aria-modal="true" aria-labelledby="modal-pro-title">
+    <div
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        backgroundColor: 'rgba(45, 41, 38, 0.75)',
+        backdropFilter: 'blur(4px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 9999,
+        padding: 16
+      }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-pro-title"
+    >
       <div style={{
         backgroundColor: '#FFFFFF',
         borderRadius: 20,

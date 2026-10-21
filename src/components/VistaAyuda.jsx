@@ -96,9 +96,15 @@ export default function VistaAyuda({ contactos, agregarContacto, eliminarContact
         }
         const query = `[out:json][timeout:10];(node["amenity"="hospital"](around:5000,${latitude.toFixed(6)},${longitude.toFixed(6)});node["amenity"="clinic"](around:5000,${latitude.toFixed(6)},${longitude.toFixed(6)});node["amenity"="pharmacy"](around:5000,${latitude.toFixed(6)},${longitude.toFixed(6)});node["amenity"="doctors"](around:5000,${latitude.toFixed(6)},${longitude.toFixed(6)}););out body;`;
 
-        fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+        fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`, {
+          signal: controller.signal
+        })
           .then(r => r.json())
           .then(result => {
+            clearTimeout(timeoutId);
             const resultados = (result.elements || [])
               .filter(e => e.tags && e.tags.name)
               .map(e => ({
@@ -118,6 +124,7 @@ export default function VistaAyuda({ contactos, agregarContacto, eliminarContact
             setBuscandoCercanas(false);
           })
           .catch(() => {
+            clearTimeout(timeoutId);
             setErrorUbicacion('No se pudieron obtener resultados geodésicos en este momento.');
             setBuscandoCercanas(false);
           });
