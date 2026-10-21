@@ -3,7 +3,7 @@
   "specVersion": "1.5",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-10-16T19:49:57.319995+00:00",
+    "timestamp": "2026-10-21T02:01:25.390592+00:00",
     "tools": [
       {
         "vendor": "V-GUARD Sentinel",
@@ -14,7 +14,7 @@
     "component": {
       "type": "application",
       "name": "hi-doctor",
-      "lockfileSha256": "7f1fa5c12b7165669259448ee4ff238d40bc4e36d02939eac3571d5c163231a7"
+      "lockfileSha256": "4b2fc63207a45d26835242feb98873ce92ccc50634141698fda411f346739724"
     }
   },
   "components": [
@@ -37,6 +37,13 @@
       "name": "@eslint/js",
       "version": "10.0.1",
       "purl": "pkg:npm/@eslint/js@10.0.1",
+      "scope": "optional"
+    },
+    {
+      "type": "library",
+      "name": "@playwright/test",
+      "version": "1.40.0",
+      "purl": "pkg:npm/@playwright/test@1.40.0",
       "scope": "optional"
     },
     {
@@ -98,8 +105,8 @@
     {
       "type": "library",
       "name": "vite",
-      "version": "8.0.12",
-      "purl": "pkg:npm/vite@8.0.12",
+      "version": "8.3.4",
+      "purl": "pkg:npm/vite@8.3.4",
       "scope": "optional"
     }
   ]
