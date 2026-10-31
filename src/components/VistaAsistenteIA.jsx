@@ -41,7 +41,7 @@ export function generarRespuestaOffline(pregunta, perfilActivo, registrosDelPerf
  * HiDoc — Vista de Asistente Doctor IA & Triaje Pediátrico Dual (Gemini / Offline)
  * ============================================================================
  */
-export default function VistaAsistenteIA({ perfilActivo, registrosDelPerfil, patrones }) {
+export default function VistaAsistenteIA({ perfilActivo, registrosDelPerfil, patrones, esPremiumActivo, onAbrirPremium }) {
   const [mensajes, setMensajes] = useState([
     {
       id: 'init-1',
@@ -76,6 +76,16 @@ export default function VistaAsistenteIA({ perfilActivo, registrosDelPerfil, pat
   async function enviarPregunta(texto) {
     const consulta = (texto || inputTexto).trim();
     if (!consulta || cargando) return;
+
+    // SaaS Quota Guard: Verificar límite de consultas para usuarios gratuitos
+    try {
+      const rawCount = localStorage.getItem('hidoc_ai_queries_count');
+      const count = rawCount ? parseInt(rawCount, 10) : 0;
+      if (!esPremiumActivo && count >= 3) {
+        if (onAbrirPremium) onAbrirPremium();
+      }
+      localStorage.setItem('hidoc_ai_queries_count', String(count + 1));
+    } catch { /* Ignorar fallos de storage */ }
 
     const userMsg = {
       id: uid(),

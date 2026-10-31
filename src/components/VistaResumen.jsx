@@ -7,7 +7,7 @@ import { formatFecha } from '../utils/clinicalHelpers';
  * HiDoc — Vista de Resumen Pediátrico para Consulta Médica & Exportación PDF
  * ============================================================================
  */
-export default function VistaResumen({ perfilActivo, registrosDelPerfil, patrones, marcaBlanca, onVolver }) {
+export default function VistaResumen({ perfilActivo, registrosDelPerfil, patrones, marcaBlanca, esPremiumActivo, onAbrirPremium, onVolver }) {
   const [copiado, setCopiado] = useState(false);
 
   const textoResumen = useMemo(() => {
@@ -75,6 +75,13 @@ export default function VistaResumen({ perfilActivo, registrosDelPerfil, patrone
   }
 
   function imprimirPDF() {
+    if (!esPremiumActivo && onAbrirPremium) {
+      const confirma = window.confirm("👑 La exportación oficial de reportes clínicos membretados en PDF es una característica de HiDoc Pro Familiar ($4.99/mes) o Licencia Clínica.\n\n¿Deseas activar tu prueba gratuita o suscripción Pro ahora?");
+      if (confirma) {
+        onAbrirPremium();
+        return;
+      }
+    }
     window.print();
   }
 

@@ -482,6 +482,8 @@ export default function App() {
             perfilActivo={perfilActivo}
             registrosDelPerfil={registrosDelPerfil}
             patrones={patrones}
+            esPremiumActivo={esPremiumActivo}
+            onAbrirPremium={() => setMostrarModalPremium(true)}
           />
         )}
 
@@ -493,6 +495,8 @@ export default function App() {
             registrosDelPerfil={registrosDelPerfil}
             patrones={patrones}
             marcaBlanca={marcaBlanca}
+            esPremiumActivo={esPremiumActivo}
+            onAbrirPremium={() => setMostrarModalPremium(true)}
             onVolver={() => cambiarVista('historial')}
           />
         )}
