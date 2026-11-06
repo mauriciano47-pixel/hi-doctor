@@ -34,4 +34,6 @@ dist-ssr
 # V-GUARD Auto-Hardening
 scratch/
 .github/workflows/
+test-results/
+playwright-report/
 

@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "test": "node --test tests/**/*.test.js",
+    "test:e2e": "playwright test",
     "test:coverage": "node --experimental-test-coverage --test tests/clinicalPharmacology.test.js tests/monetizationContracts.test.js tests/pediatricTriage.test.js tests/runtimeContracts.test.js tests/propertyFuzzing.test.js tests/chaosEngineering.test.js",
     "test:mutation": "node ./scripts/mutation-audit.mjs",
     "typecheck": "node -e \"process.exit(0)\"",
@@ -21,7 +22,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@playwright/test": "^1.40.0",
+    "@playwright/test": "^1.65.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
