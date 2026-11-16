@@ -1,70 +1,99 @@
 /**
- * HIDOCTOR — Motor de Mutation Testing Autónomo (100% Kill Rate)
- * Inyecta mutantes sintácticos en la lógica de triaje pediátrico, umbrales de fiebre
- * y cálculo de dosis farmacológicas para garantizar que las pruebas unitarias aniquilen cualquier regresión.
+ * HIDOCTOR — Motor Real de Mutation Testing en Sandbox Aislado
+ * Copia los módulos a scratch/mutation_sandbox, muta código fuente real
+ * y ejecuta `node --test` verificando 100% Kill Rate empírico.
  */
+import fs from 'node:fs';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 
-import {
-  sanitizeAndValidateTemperature,
-  sanitizeAndValidateDoseCalculation,
-  sanitizeAndValidateTriageSymptoms
-} from '../src/runtimeContracts.js';
+const ROOT = process.cwd();
+const SANDBOX = path.join(ROOT, 'scratch', 'mutation_sandbox');
 
-console.log('\x1b[36m%s\x1b[0m', '🧬 [MUTATION ENGINE] Iniciando auditoría de mutaciones sintácticas en HiDoctor...');
-
-const mutants = [
+const MUTATIONS = [
   {
-    name: 'Mutante 1: Sabotaje de umbral de fiebre (clasificar 37.0°C como fiebre)',
-    test: () => {
-      const res = sanitizeAndValidateTemperature(37.0);
-      // En la lógica real 37.0°C es normal (fiebre es >= 38.0). Si fuera fiebre, mutante sobrevive.
-      return res.data.classification !== 'fiebre'; // KILLED si descarta que 37.0 sea fiebre
-    }
+    id: 'MUT-HD-01',
+    name: 'Invertir umbral de fiebre (>= 38.0 -> >= 42.5)',
+    file: 'src/runtimeContracts.js',
+    target: 'if (cleanTemp >= 38.0) classification =',
+    replacement: 'if (cleanTemp >= 42.5) classification =',
+    testFile: 'tests/runtimeContracts.test.js'
   },
   {
-    name: 'Mutante 2: Sabotaje de bioseguridad farmacológica (duplicar dosis de paracetamol a 30 mg/kg)',
-    test: () => {
-      const res = sanitizeAndValidateDoseCalculation({ weightKg: 10, drug: 'paracetamol' });
-      // Dosis real calculada: 10 * 15 = 150 mg. Si el mutante inyecta 300 mg, se aniquila.
-      return res.data.singleDoseMg === 150.0; // KILLED si coincide con el estándar real de 15 mg/kg
-    }
+    id: 'MUT-HD-02',
+    name: 'Duplicar dosis paracetamol (15.0 -> 30.0 mg/kg)',
+    file: 'src/runtimeContracts.js',
+    target: 'let doseMgPerKg = 15.0;',
+    replacement: 'let doseMgPerKg = 30.0;',
+    testFile: 'tests/runtimeContracts.test.js'
   },
   {
-    name: 'Mutante 3: Sabotaje de límite biológico pediátrico inferior (permitir 32.0°C como temperatura válida)',
-    test: () => {
-      const res = sanitizeAndValidateTemperature(32.0);
-      // El límite inferior viable es 34.0°C. 32.0°C debe ser inválido.
-      return res.valid === false; // KILLED si detecta y rechaza la temperatura anómala
-    }
+    id: 'MUT-HD-03',
+    name: 'Sabotear rango mínimo temperatura (tempCelsius >= 34.0 -> tempCelsius >= 20.0)',
+    file: 'src/runtimeContracts.js',
+    target: 'tempCelsius >= 34.0 && tempCelsius <= 43.0',
+    replacement: 'tempCelsius >= 20.0 && tempCelsius <= 43.0',
+    testFile: 'tests/runtimeContracts.test.js'
   },
   {
-    name: 'Mutante 4: Sabotaje de detección de Banderas Rojas (omitir alerta de emergencia ante convulsión)',
-    test: () => {
-      const res = sanitizeAndValidateTriageSymptoms(['convulsión febril']);
-      // Debe activar emergencia crítica
-      return res.data.isEmergency === true && res.data.triageLevel === 'CRITICO_RED_FLAG'; // KILLED si detecta bandera roja
-    }
+    id: 'MUT-HD-04',
+    name: 'Invertir detección de Banderas Rojas (length > 0 -> length < 0)',
+    file: 'src/runtimeContracts.js',
+    target: 'isEmergency: detectedRedFlags.length > 0,',
+    replacement: 'isEmergency: detectedRedFlags.length < 0,',
+    testFile: 'tests/runtimeContracts.test.js'
+  },
+  {
+    id: 'MUT-HD-05',
+    name: 'Sabotear dosis diaria máxima (* 4 -> * 1)',
+    file: 'src/runtimeContracts.js',
+    target: 'Number((singleDoseMg * 4).toFixed(1))',
+    replacement: 'Number((singleDoseMg * 1).toFixed(1))',
+    testFile: 'tests/runtimeContracts.test.js'
   }
 ];
 
-let killedCount = 0;
-for (const m of mutants) {
-  const killed = m.test();
-  if (killed) {
-    killedCount++;
-    console.log(` ✅ KILLED: ${m.name}`);
-  } else {
-    console.log(` ❌ SURVIVED: ${m.name}`);
+function copyDirSync(src, dest) {
+  fs.mkdirSync(dest, { recursive: true });
+  for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+    const s = path.join(src, entry.name);
+    const d = path.join(dest, entry.name);
+    if (entry.isDirectory()) copyDirSync(s, d);
+    else fs.copyFileSync(s, d);
   }
 }
 
-const killRate = Math.round((killedCount / mutants.length) * 100);
-console.log(`\n📊 Resumen Mutation Testing: ${killedCount}/${mutants.length} mutantes aniquilados (${killRate}% Kill Rate).`);
+console.log('🧬 [HIDOCTOR MUTATION SANDBOX] Ejecutando mutaciones empíricas en código fuente...');
+let killed = 0;
 
-if (killRate === 100) {
-  console.log('\x1b[32m%s\x1b[0m', '🏆 [MUTATION SHIELD VERIFIED]: 100% Kill Rate alcanzado. Pruebas clínicas inmunes a sabotaje.');
-  process.exit(0);
-} else {
-  console.error('\x1b[31m%s\x1b[0m', '⚠️ Mutantes sobrevivieron. Refuerce las aserciones de triaje.');
-  process.exit(1);
+try {
+  fs.rmSync(SANDBOX, { recursive: true, force: true });
+  fs.mkdirSync(SANDBOX, { recursive: true });
+  fs.copyFileSync(path.join(ROOT, 'package.json'), path.join(SANDBOX, 'package.json'));
+  copyDirSync(path.join(ROOT, 'src'), path.join(SANDBOX, 'src'));
+  copyDirSync(path.join(ROOT, 'tests'), path.join(SANDBOX, 'tests'));
+
+  for (const mut of MUTATIONS) {
+    const targetPath = path.join(SANDBOX, mut.file);
+    const original = fs.readFileSync(targetPath, 'utf8');
+    if (!original.includes(mut.target)) {
+      throw new Error(`Patrón objetivo no encontrado en ${mut.file}: ${mut.target}`);
+    }
+    fs.writeFileSync(targetPath, original.replace(mut.target, mut.replacement), 'utf8');
+    const res = spawnSync(process.execPath, ['--test', mut.testFile], { cwd: SANDBOX, encoding: 'utf8' });
+    fs.writeFileSync(targetPath, original, 'utf8');
+
+    if (res.status !== 0) {
+      killed++;
+      console.log(` ✅ KILLED [${mut.id}]: ${mut.name}`);
+    } else {
+      console.error(` ❌ SURVIVED [${mut.id}]: ${mut.name}`);
+    }
+  }
+} finally {
+  fs.rmSync(SANDBOX, { recursive: true, force: true });
 }
+
+const rate = Math.round((killed / MUTATIONS.length) * 100);
+console.log(`\n📊 Kill Rate Empírico HiDoctor: ${killed}/${MUTATIONS.length} (${rate}%)`);
+process.exit(killed === MUTATIONS.length ? 0 : 1);
